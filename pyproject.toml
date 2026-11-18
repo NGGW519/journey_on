@@ -1,0 +1,36 @@
+[project]
+name = "journey-on"
+version = "0.1.0"
+description = "가평읍 3D 가상공간: 공공 공간정보 → Unity 변환 파이프라인"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.13",
+    "shapely>=2.0",
+    "pyproj>=3.6",
+    "geopandas>=1.0",
+    "pyogrio>=0.9",
+    "rasterio>=1.4",
+    "trimesh>=4.4",
+    "mapbox-earcut>=1.0",
+    "pygltflib>=1.16",
+    "pillow>=10.0",
+    "requests>=2.32",
+    "pyyaml>=6.0",
+    "matplotlib>=3.9",
+    "tqdm>=4.66",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"

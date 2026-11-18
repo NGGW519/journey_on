@@ -1,0 +1,21 @@
+{
+  "enabledPlugins": {
+    "harness@harness-marketplace": true,
+    "unity@claude-plugins-official": true,
+    "csharp-lsp@claude-plugins-official": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell|WebFetch|WebSearch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/license_guard.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,184 @@
+# 가평읍 3D 가상공간 — 파이프라인 단일 설정 파일
+# 모든 스크립트와 Unity 임포터가 이 값을 기준으로 삼는다. 값을 바꾸면 산출물을 다시 만든다.
+
+project: journey_on
+crs: "EPSG:5186"            # GRS80 중부원점. 모든 레이어를 이 좌표계로 재투영한다.
+
+# Unity (0,0,0) = 이 점. X=동(E-원점E), Z=북(N-원점N), Y=표고(해발 m, 원점 빼지 않음)
+# 자라섬 서도 동쪽 끝(가평천·북한강 합류부)의 1km 격자점. 격자점에 두면 타일 경계가 정수 좌표가 된다.
+origin:
+  easting: 246000
+  northing: 580000
+
+tile_size_m: 1000           # 1km x 1km 격자. 타일 이름 Tile_{E km}_{N km} (남서 모서리 기준)
+
+heightmap:
+  resolution: 1025          # 16-bit RAW, 1025 x 1025, 표본점 정렬(가장자리 표본을 이웃 타일과 공유)
+  base_m: -20.0             # RAW 0 이 뜻하는 표고
+  range_m: 1200.0           # RAW 65535 = base_m + range_m. 모든 타일 동일(이음매 일치를 위해)
+  byte_order: little        # Unity Windows 바이트 순서
+  row_order: south_to_north # RAW 첫 행 = 타일 남쪽 가장자리
+
+areas:
+  phase1:
+    title: "1단계 관광지 권역 — 달전리 북한강 수변(자라섬·남이섬 선착장) + 남이섬 원경"
+    # EPSG:5186 미터 [minE, minN, maxE, maxN] — 1km 격자에 맞춘다
+    bounds: [244000, 575000, 248000, 582000]
+    ortho_px: 4096          # 타일당 정사영상 해상도(약 0.24m/px)
+    buildings: true
+    no_build_zones:         # 지형·영상만 넣고 건물은 넣지 않는 곳(행정경계 밖 원경)
+      - name: "남이섬(춘천시)"
+        island: "남이섬"         # islands 레이어에서 이 이름의 섬 폴리곤을 쓴다(+10m 여유)
+        # 섬 폴리곤을 못 찾을 때만 쓰는 대략 범위. 공식 행정경계(춘천시) 확보 후 교체한다.
+        bounds: [245700, 575900, 246900, 578000]
+  phase2:
+    title: "2단계 시가지 — 읍내리·대곡리"
+    bounds: null            # 1주차 데이터 확인 후 확정
+    ortho_px: 2048
+    buildings: true
+  phase3:
+    title: "3단계 읍 전역 — 14개 법정리"
+    bounds: null
+    ortho_px: 1024
+    buildings: true
+
+buildings:
+  min_area_m2: 4.0          # 이보다 작은 외곽선은 버린다
+  default_floors: 1         # 층수 누락 시
+  max_floors: 60            # 이보다 크면 오류로 보고 기본값 처리 + 목록에 기록
+  floor_height_m:           # 기획서: 주거 2.8m, 상업·업무 3.5m. 나머지는 3.5m로 가정(decisions.md D-004)
+    residential: 2.8
+    commercial: 3.5
+    public: 3.5
+    industrial: 3.5
+    other: 3.5
+  # 외벽 UV(계약 C1, D-011): 창 한 칸 폭(m). 변마다 칸 수 = max(1, round(변 길이 ÷ 이 값)), v = 높이 ÷ 층고
+  facade_bay_m:
+    residential: 3.0
+    commercial: 4.0
+    public: 4.0
+    industrial: 6.0
+    other: 3.5
+  roof_tile_m: 4.0          # 지붕 UV 한 칸(m)
+
+water:
+  # 수면 높이 = 수면 폴리곤 안 DEM 값의 이 백분위수(호안·교각 같은 이상치 배제)
+  level_percentile: 5
+  shore_overlap_m: 3.0      # 수면 폴리곤을 이만큼 넓혀 지형과의 틈을 덮는다
+  # 보이는 수면 자르기(D-007, 06a): 넓힌 메시를 '최종 지형(RAW 이중선형) − 수면 < shore_clip_above_m' 영역으로 자른다.
+  # Unity 는 water.glb 경계에 물가 벽을 세우므로, 수면이 지형 아래 묻힌 곳의 벽이 보이는 물가선으로 옮겨진다.
+  # 잘린 경계에서 수면 가장자리는 지형 아래 이 값만큼 묻힌다(틈 없음). manifest 최상위 water 에도 싣는다.
+  shore_clip_above_m: 0.4
+  shore_clip_simplify_m: 0.15   # 영역 경계(높이맵 표본 격자 ≈ 0.98 m 등고선) 단순화 허용 오차(0.25 는 급한 둑에서 −0.14 m 틈)
+  shore_clip_min_area_m2: 50.0  # 이보다 작은 수면 조각은 빼고, 메시 안에 갇힌 이보다 작은 구멍은 메운다
+  # 하상 깎기(D-007). 물가 바깥 shore_ramp_m 까지 shore_slope_out 경사로 내려가게 하고,
+  # 수면보다 carve_max_above_m 넘게 높은 지형(폴리곤에 잘못 들어간 산비탈 등)은 깎지 않는다.
+  shore_ramp_m: 20.0
+  shore_slope_out: 0.5
+  carve_max_above_m: 8.0
+  # 경사 수면 판정: 표고 범위 > 3m 이고 (하천 태그 또는 가늘고 긴 모양: 4πA/P² < 값)
+  sloped_compactness_max: 0.25
+
+roads:
+  # 도로·철도 폭(m). 도로 마스크(C2), 다리 자리(D-007), 교량 상판 메시(C3)가 함께 쓴다(pipeline/bridges.py).
+  # 우선순위: OSM width 태그 → lanes × lane_m + shoulder_m → 아래 등급별 기본값(없으면 default).
+  # 2026-11-18 줄임(D-012): 시험 렌더에서 도로가 실제보다 넓어 보였다.
+  lane_m: 3.0
+  shoulder_m: 1.0
+  # 폭 이상값(06a): width 태그·lanes 로 낸 폭이 등급 기본값 × 이 값을 넘으면 그 태그를 거르고 다음 규칙을 쓴다
+  # (목록: reports/width_outliers.csv). 예: 북한강 자전거길 w588836894 width=43 → cycleway 2.5 m
+  width_outlier_ratio: 3.0
+  width_m:
+    motorway: 25.0
+    trunk: 10.0
+    primary: 10.0
+    secondary: 8.0
+    tertiary: 7.0
+    unclassified: 5.0
+    residential: 5.0
+    living_street: 5.0
+    service: 4.0
+    track: 3.0
+    link: 8.0               # *_link 공통
+    pedestrian: 2.0
+    cycleway: 2.5
+    footway: 2.0
+    steps: 2.0
+    path: 2.0
+    bridleway: 3.0
+    rail: 5.0               # railway=rail. OSM 경춘선은 선로마다 way 하나 → way당 단선 폭(D-007, D-012)
+    light_rail: 8.0
+    subway: 8.0
+    narrow_gauge: 4.0
+    default: 6.0
+  # 도로 지면 마스크(계약 C2, D-012): 타일마다 roads_mask.png(1024², R 차도·G 보행·B 철도). 다리·터널 구간은 뺀다.
+  mask_px: 1024
+  mask_supersample: 4       # 안티에일리어싱: 한 픽셀을 4×4 부분 표본의 덮임 비율로
+  # 교량 상판 메시(계약 C3, D-012). 상판 윗면 높이: 양 끝 = 접속 도로 지점의 지형(RAW 이중선형),
+  # 가운데 = max(양 끝 선형 보간, 수면 + clearance), 경사 상한 안에서 잇는다. 상판 높이는 dem 단계가 정한다.
+  deck_thickness_m: 0.8
+  parapet_height_m: 1.0     # 모든 종류 양옆 난간(걸어서 떨어지지 않게)
+  parapet_thickness_m: 0.25
+  bridge_clearance_m: {road: 3.0, foot: 1.5, rail: 4.0}
+  bridge_max_grade: {road: 0.08, foot: 0.08, rail: 0.03}
+  # 끝 노드를 공유하는 다리 아닌 길이 없는 끝: 육지면 끝 지점 지형에 고정(06a). 선 끝에서 바깥으로 이 거리의 점은
+  # 물 위 끝(선착장·잔교: 수면 + 여유) 판정과 끝 밖 땅 경사(보고용 ground_grade)에만 쓴다.
+  bridge_end_fallback_m: 10.0
+  bridge_smooth_m: 20.0     # 종단 꺾임을 다듬는 이동평균 창(m)
+  # 수면 바닥(C3 2026-11-18 개정): 상판 윗면은 어디서도 수면 메시(water.glb) + 이 값 아래로 내려가지 않는다.
+  # 그 때문에 끝이 지형보다 높아지는 것은 bridge_end_raise_max_m 까지 허용(Unity stepOffset 0.5).
+  bridge_min_water_gap_m: 0.2
+  bridge_end_raise_max_m: 0.5
+  # 나란한 다리 way(상·하행, 선로별, 병행 자전거교): 중심선 간격 ≤ 이 값, 방향 차 ≤ 각도면 같은 단면에서 높이 공유(큰 값)
+  bridge_parallel_m: 12.0
+  bridge_parallel_angle_deg: 20.0
+  # 상판 밑 지형(D-012): 상판 자리(+ 이중선형 표본 1.5칸) 지형을 상판 밑면 − under_deck_clear_m 이하로 낮춘다.
+  # 땅에 닿는 끝(접속 길·바깥 지형 끝)은 under_deck_end_m 동안 '윗면 − 0.05 m' → 위 규칙으로 바뀐다.
+  # 둘레는 under_deck_ramp_slope 경사로 원래 지형과 섞는다(끝 바깥으로는 섞지 않는다: 터널 입구 산비탈 보호).
+  under_deck_clear_m: 0.3
+  under_deck_end_m: 3.0
+  under_deck_ramp_slope: 0.5
+
+dem:
+  # interim DEM 이 DSM(Copernicus)일 때만: 건물 자리의 융기를 주변 지면 높이로 낮춘다(D-009).
+  # 공식 DEM(DTM)이 오면 자동으로 꺼진다.
+  dsm_flatten_buildings:
+    inner_buffer_m: 6.0     # 외곽선에서 이 거리까지는 지면 추정값으로 평탄화
+    blend_m: 10.0           # 그 바깥 이 폭에서 원래 지형으로 서서히 복귀
+    ring_outer_m: 35.0      # 지면 추정에 쓰는 고리(inner_buffer ~ ring_outer)
+    ring_percentile: 25
+  # DSM(30m)은 다리 상판·교각을 주변으로 번지게 한다. 물에 닿는 다리 자리를 OSM 폭보다 이만큼 넓게 잡아
+  # 보호 없이 깎고, 경사 수면 높이 계산에서 뺀다(D-007). 공식 DEM(DTM)이면 0 으로 동작한다.
+  dsm_bridge_margin_m: 15.0
+
+skirt:
+  # 원경 스커트(계약 C4, D-013): 범위 경계부터 경계 + margin_m 까지 Copernicus 원천 그대로(EGM2008 정표고).
+  margin_m: 12000
+  near_m: 3000              # 경계에서 이 거리 안은 spacing_m[0], 밖은 spacing_m[1]
+  spacing_m: [60, 120]
+  inner_overlap_m: 60       # 범위 안으로 겹쳐 들어오는 폭. 겹친 정점은 그 둘레 지형 최저값 − overlap_drop_m
+  overlap_drop_m: 2.0
+  boundary_samples: 4       # 경계 줄 정점 간격 = 높이맵 표본 간격 × 이 값(Terrain 경계 높이에 맞춘다)
+  boundary_blend_m: 300     # 경계 높이 보정(Terrain − Copernicus)을 바깥으로 이 거리에서 0 으로 줄인다
+  max_vertices: 65000       # 덩어리(SK_<i>)당 정점 상한
+  vertex_color: true        # COLOR_0(표고·경사 색조)
+  water_level_percentile: 5 # 범위 밖 수면(SKW_<i>) 높이 = 폴리곤 안 Copernicus 표본의 이 백분위수
+  water_min_area_m2: 20000  # 이보다 작은 범위 밖 수면은 넣지 않는다
+  water_drop_m: 2.0         # SKW 삼각형 아래 원경 정점(경계 줄 제외)은 그 자리 수면보다 이만큼 이상 낮춘다(깜빡임 방지)
+
+spawn:
+  # 플레이어 시작점: 이 지점에서 가장 가까운 '물가에서 떨어진 육지'를 파이프라인이 찾는다
+  near: [246298, 578303]    # 남이섬 선착장(가평 측), OSM n9760957012
+  look_at: [246291, 577019] # 남이섬 중심 쪽을 본다
+  min_shore_distance_m: 12.0
+  search_radius_m: 300.0
+
+paths:
+  raw: data/raw
+  interim: data/interim
+  out: data/out
+
+# 공개 대체 데이터(공식 데이터가 오기 전 임시). provenance에 interim=true 로 기록되고 QA가 경고한다.
+interim_sources:
+  dem: copernicus_glo30
+  vectors: osm_overpass
