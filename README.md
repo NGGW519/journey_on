@@ -12,15 +12,15 @@
 ![자라섬 상공에서 본 1단계 범위](docs/images/phase1_jarasum_aerial.jpg)
 ![가평역 앞 보행 시점](docs/images/phase1_gapyeong_station.jpg)
 
-<sub>위 화면의 지형·건물·수면·도로는 임시 공개 데이터로 만들었다. Produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. © OpenStreetMap contributors, ODbL 1.0 (openstreetmap.org/copyright)</sub>
+<sub>아기자기(cozy) 테마 화면이다. 지형·건물·수면·도로의 모양은 임시 공개 데이터로 만들었고, 외벽·지붕·지면 텍스처는 생성형 이미지 모델로 만들었다. Produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. © OpenStreetMap contributors, ODbL 1.0 (openstreetmap.org/copyright)</sub>
 
 ## 현재 상태
 
-1단계 5일 데모(지형, 건물, 수면, 도로·교량, 원경, 자유 이동, Windows 빌드, 시연 영상)를 **임시 데이터**로 만들었다.
+1단계 5일 데모(지형, 건물, 수면, 도로·교량, 원경, 자유 이동, Windows 빌드, 시연 영상)를 **임시 데이터**로 만들었다. 화면은 아기자기(cozy) 테마다.
 
 - **쓰는 데이터:** 공식 데이터(국토지리정보원 DEM·정사영상·수치지도, 브이월드 GIS건물통합정보)는 로그인과 신청이 필요하다. 그래서 지금은 Copernicus GLO-30 DEM과 OpenStreetMap을 `interim`으로 표시해 쓴다.
 - **교체 방법:** 공식 파일을 등록하고 파이프라인을 다시 돌리면 바뀐다.
-- **확인 상태:** 자동 검사(`validate`)는 FAIL 0, pytest 71개와 Unity EditMode 테스트 27개는 모두 통과한다.
+- **확인 상태:** 자동 검사(`validate`)는 FAIL 0, pytest 84개와 Unity EditMode 테스트 40개는 모두 통과한다.
 - **더 보기:** 남은 문제와 일정은 [`docs/PROGRESS.md`](docs/PROGRESS.md)에 있다.
 
 ## 저장소 구성
@@ -32,6 +32,7 @@
 | `tests/` | 파이프라인 단위 테스트(합성 데이터) |
 | `unity/JourneyOn/` | Unity 6.3 LTS(URP) 프로젝트: 임포터, 보행 컨트롤러, 캡처·빌드 도구 |
 | `docs/` | 결정 기록, 진행 상황, 데이터 확보 절차·이용조건, QA 점검표 |
+| `art/` | 생성형 텍스처 도구(MonoGPT 이미지 모델 → 이음매 없는 텍스처 → `Assets/Art/Cozy/`) |
 | `qgis/`, `scripts/` | 원천 데이터를 겹쳐 보는 QGIS 프로젝트와 그 생성 스크립트 |
 | `.claude/` | Claude Code 하네스: 에이전트, 스킬, 약관 가드 훅 |
 
@@ -104,7 +105,24 @@ PROJ="$PWD/unity/JourneyOn"
 
 빌드 폴더에 생기는 `*_BurstDebugInformation_DoNotShip` 폴더는 배포할 때 뺀다.
 
-### 5. 조작
+### 5. 아트 테마
+
+모양은 공공 데이터 그대로 두고, 색감·재질·조명만 테마로 바꾼다.
+- 기본은 아기자기한 미니어처 풍인 `cozy`다. 파스텔 팔레트, 생성 텍스처, 따뜻한 조명, SSAO, 조감 화면의 틸트시프트를 쓴다.
+- 임포트·캡처·빌드 명령에 `-theme realistic`을 붙이면 이전 화면이 나온다.
+- 규칙과 에셋 계약은 [`docs/ART.md`](docs/ART.md), 결정은 D-014에 있다.
+
+텍스처를 다시 만들려면 `.env`에 `MONOGPT_API_KEY`와 `MONOGPT_BASE_URL`이 필요하다. 원본은 `art/raw/`에 캐시되며 Git에 넣지 않는다.
+
+```bash
+.venv/Scripts/python -m art generate --theme cozy [--only facade_residential] [--force]   # 생성(캐시가 있으면 건너뜀)
+.venv/Scripts/python -m art process  --theme cozy   # 후처리 → unity/JourneyOn/Assets/Art/Cozy/*.jpg + art_manifest.json
+.venv/Scripts/python -m art sheet    --theme cozy   # 검토용 3×3 반복 미리보기 → _workspace/art/
+```
+
+텍스처만 바꿨을 때는 재임포트 대신 `JourneyOn.Editor.WorldImporter.RefreshLookFromCommandLine`(메뉴 `Refresh Look phase1`)로 씬 겉모습만 다시 맞춘다.
+
+### 6. 조작
 
 | 키 | 동작 |
 | --- | --- |
@@ -145,6 +163,7 @@ PROJ="$PWD/unity/JourneyOn"
 - [`docs/PROGRESS.md`](docs/PROGRESS.md): 일정, 진행 상황, 알려진 문제
 - [`docs/decisions.md`](docs/decisions.md): 결정 기록 D-001~D-013
 - [`docs/DATA_ACQUISITION.md`](docs/DATA_ACQUISITION.md): 공식 데이터 받는 절차
-- [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md): 출처·이용조건·크레딧 문구
+- [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md): 출처·이용조건·크레딧 문구(생성형 아트 에셋 포함)
+- [`docs/ART.md`](docs/ART.md): 아트 테마 원칙과 텍스처 에셋 계약
 - [`docs/qa/playtest_checklist.md`](docs/qa/playtest_checklist.md): 직접 조작 검수 점검표
 - [`docs/qa/roadview_checklist.md`](docs/qa/roadview_checklist.md): 로드뷰 육안 대조 점검표

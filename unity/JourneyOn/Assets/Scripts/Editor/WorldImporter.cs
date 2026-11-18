@@ -34,6 +34,8 @@ namespace JourneyOn.Editor
         static readonly Vector2 FallbackSpawnEN = new Vector2(246285f, 578310f);
 
         static List<string> warnings;
+        /// <summary>이번 실행의 아트 테마(D-014). Import·RefreshLook 시작 때 정한다(명령줄 -theme, 기본 cozy).</summary>
+        static Theme theme = Theme.Cozy;
         /// <summary>계약 C3 교량 여유(= water.shore_overlap_m + 0.5). Import 시작 때 정한다.</summary>
         static float bridgeMargin = ShoreRules.BridgeMargin;
         /// <summary>착지·진입 검사의 묻힌 수면 허용치(= manifest water.shore_clip_above_m, 없으면 0.3). Import 시작 때 정한다.</summary>
@@ -43,48 +45,194 @@ namespace JourneyOn.Editor
             Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "..", "data", "out"));
 
         [MenuItem("JourneyOn/Import Area phase1")]
-        static void MenuImportPhase1() => Import("phase1", DefaultDataRoot());
+        static void MenuImportPhase1() => Import("phase1", DefaultDataRoot(), Theme.Cozy);
 
-        [MenuItem("JourneyOn/Refresh Look phase1 (materials, skirt colour)")]
+        [MenuItem("JourneyOn/Refresh Look phase1 (cozy)")]
         static void MenuRefreshLook()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
-            RefreshLook("phase1");
+            RefreshLook("phase1", Theme.Cozy);
+        }
+
+        [MenuItem("JourneyOn/Refresh Look phase1 (realistic)")]
+        static void MenuRefreshLookRealistic()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            RefreshLook("phase1", Theme.Realistic);
         }
 
         /// <summary>
-        /// 배치 모드: -executeMethod JourneyOn.Editor.WorldImporter.RefreshLookFromCommandLine -area phase1
-        /// data/out 타일을 다시 읽지 않고(파이프라인이 다시 쓰는 중이어도 된다) 기존 씬의 겉모습만 코드 값으로 다시 맞춘다:
-        /// 생성 텍스처·재질(건물·도로 레이어·교량·수면·하늘), 원경 정점색 재칠. manifest 는 facade 값만 읽는다(실패 시 몇 번 다시 시도).
-        /// 임포트와 같은 함수를 쓰므로 다음 재임포트 결과와 같다. unity_import.json 은 쓰지 않는다.
+        /// 배치 모드: -executeMethod JourneyOn.Editor.WorldImporter.RefreshLookFromCommandLine -area phase1 [-theme cozy|realistic]
+        /// data/out 타일을 다시 읽지 않고(파이프라인이 다시 쓰는 중이어도 된다) 기존 씬의 겉모습만 테마(기본 cozy) 코드 값으로 다시 맞춘다:
+        /// 텍스처(생성 이미지 → 없으면 코드 생성)·재질(건물 틴트 변형 재배정·도로 레이어·지면 바탕 레이어·교량 UV 사본·수면·하늘),
+        /// 조명·안개·후처리 Volume·SSAO·그림자 거리, 플레이어 카메라·HUD, 원경 정점색 재칠.
+        /// manifest 는 facade 값만 읽는다(실패 시 몇 번 다시 시도). 임포트와 같은 함수를 쓰므로 다음 재임포트 결과와 같다.
+        /// unity_import.json 은 쓰지 않는다.
         /// </summary>
         public static void RefreshLookFromCommandLine()
         {
-            string area = Arg(Environment.GetCommandLineArgs(), "-area") ?? "phase1";
-            try { RefreshLook(area); EditorApplication.Exit(0); }
+            var args = Environment.GetCommandLineArgs();
+            string area = Arg(args, "-area") ?? "phase1";
+            try { RefreshLook(area, Theme.FromArgs(args)); EditorApplication.Exit(0); }
             catch (Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
         }
 
-        public static void RefreshLook(string area)
+        public static void RefreshLook(string area, Theme t)
         {
             warnings = new List<string>();
+            theme = t;
+            ProceduralTextures.ResetArtLog();
+            AssetDatabase.Refresh();   // 생성 이미지가 새로 들어왔으면 임포트(CozyArtImport 가 설정을 맞춘다)
             var scene = EditorSceneManager.OpenScene($"Assets/Scenes/{area}.unity", OpenSceneMode.Single);
             var m = CaptureCommon.LoadManifestWithRetry(area);
-            ProceduralTextures.EnsureBuildingMaterials(m.facade);
-            ProceduralTextures.EnsureRoadLayers();
-            ProceduralTextures.EnsureBridgeMaterials();
-            var waterMat = EnsureWaterMaterial();
-            RenderSettings.skybox = EnsureSkyMaterial();
-            var report = new ImportReport { area = area, manifest_version = m.manifest_version };
-            var skirt = GameObject.Find("World/Skirt");
+            var bmats = ProceduralTextures.EnsureBuildingMaterials(m.facade, t);
+            var roadLayers = ProceduralTextures.EnsureRoadLayers(t);
+            var bridgeMats = ProceduralTextures.EnsureBridgeMaterials(t);
+            var waterMat = EnsureWaterMaterial(t);
+            var report = new ImportReport { area = area, manifest_version = m.manifest_version, theme = t.name };
+            report.fog_density = ThemeApply.ApplyEnvironment(m, t);
             var terrains = UnityEngine.Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None);
+            int grounds = ApplyGroundLayers(terrains, t);
+            int buildings = ApplyBuildingLook(bmats);
+            int bridges = ApplyBridgeLook(area, bridgeMats);
+            ThemeApply.ApplyPlayerLook(t);
+            var skirt = GameObject.Find("World/Skirt");
             if (skirt != null) ApplySkirtLook(m, area, skirt, waterMat, terrains, report);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
-            Debug.Log($"[WorldImporter] RefreshLook 완료: 지면 알베도(선형) {Fmt(report.ground_albedo_linear)}, 덮임 {Fmt(report.ground_layer_coverage)}, " +
+            Debug.Log($"[WorldImporter] RefreshLook 완료(테마 {t.name}): 생성 이미지 {ProceduralTextures.ArtUsed.Count}개 사용 [{string.Join(", ", ProceduralTextures.ArtUsed)}], " +
+                      $"없어서 코드 생성 {ProceduralTextures.ArtMissing.Count}개 [{string.Join(", ", ProceduralTextures.ArtMissing)}]; " +
+                      $"지면 바탕 레이어 {grounds}/{terrains.Length}, 건물 렌더러 {buildings}, 교량 메시 {bridges}, 안개 {report.fog_density:0.000000}; " +
+                      $"지면 알베도(선형) {Fmt(report.ground_albedo_linear)}, 덮임 {Fmt(report.ground_layer_coverage)}, " +
                       $"원경 원래 평균 {Fmt(report.skirt_source_mean_linear)} → {Fmt(report.skirt_recolor_target_linear)} (변화 {report.skirt_recolor_variation}), " +
                       $"원경 {report.skirt_nodes}+수면 {report.skirt_water_nodes}, 경고 {warnings.Count} {string.Join(" / ", warnings)}");
+        }
+
+        /// <summary>
+        /// 지형 바탕 레이어(타일마다 layer.terrainlayer)를 테마 잔디 텍스처·타일 크기로 맞춘다. 정사영상을 쓰는 타일은 그대로 둔다(D-014).
+        /// 도로 레이어(공용 에셋)는 EnsureRoadLayers 가 바꾸고, 여기서는 basemap 만 다시 만들게 표시한다.
+        /// </summary>
+        static int ApplyGroundLayers(IEnumerable<Terrain> terrains, Theme t)
+        {
+            var tex = ProceduralTextures.EnsureGroundTexture(t, out float tile, out Vector4 tint);
+            int n = 0;
+            foreach (var terr in terrains)
+            {
+                var td = terr.terrainData;
+                var layers = td.terrainLayers;
+                if (layers == null || layers.Length == 0 || layers[0] == null) continue;
+                var l0 = layers[0];
+                bool ortho = l0.diffuseTexture != null && AssetDatabase.GetAssetPath(l0.diffuseTexture).EndsWith("/ortho.jpg", StringComparison.Ordinal);
+                if (!ortho)
+                {
+                    l0.diffuseTexture = tex;
+                    l0.tileSize = new Vector2(tile, tile);
+                    l0.tileOffset = Vector2.zero;
+                    l0.smoothness = 0f;
+                    l0.metallic = 0f;
+                    ProceduralTextures.SetLayerTint(l0, tint);
+                    EditorUtility.SetDirty(l0);
+                    n++;
+                }
+                td.terrainLayers = layers;
+                td.SetBaseMapDirty();
+                EditorUtility.SetDirty(td);
+            }
+            return n;
+        }
+
+        /// <summary>
+        /// 씬의 건물 렌더러(World/Tile_*/Buildings 아래)에 테마 재질을 다시 배정한다. 자리(벽·지붕·단색)는 지금 재질 이름으로 알아내고
+        /// (<see cref="ProceduralTextures.ParseBuildingMaterial"/>, 모르면 submesh 1 = 지붕), 용도는 BuildingInfo, 틴트 변형은 건물 id 해시로 정한다.
+        /// </summary>
+        static int ApplyBuildingLook(ProceduralTextures.BuildingMaterials mats)
+        {
+            int n = 0;
+            foreach (var mr in UnityEngine.Object.FindObjectsByType<MeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (!UnderWrapper(mr.transform, "Buildings")) continue;
+                var bi = mr.GetComponentInParent<BuildingInfo>(true);
+                string cls = bi != null && mats.wall.ContainsKey(bi.usageClass ?? "") ? bi.usageClass : "other";
+                string key = bi != null && !string.IsNullOrEmpty(bi.id) ? bi.id : mr.gameObject.name;
+                var cur = mr.sharedMaterials;
+                var next = new Material[cur.Length];
+                for (int i = 0; i < cur.Length; i++)
+                {
+                    var slot = cur[i] != null && ProceduralTextures.ParseBuildingMaterial(cur[i].name, out var s, out _) ? s
+                             : i == 1 ? ProceduralTextures.Slot.Roof : ProceduralTextures.Slot.Wall;
+                    next[i] = mats.For(slot, cls, key);
+                }
+                mr.sharedMaterials = next;
+                n++;
+            }
+            return n;
+        }
+
+        static bool UnderWrapper(Transform t, string wrapper)
+        {
+            for (var cur = t; cur != null; cur = cur.parent)
+                if (cur.name == wrapper && cur.parent != null && cur.parent.name.StartsWith("Tile_", StringComparison.Ordinal)) return true;
+            return false;
+        }
+
+        /// <summary>씬의 교량(World/Tile_*/Bridges 아래)에 kind 별 테마 재질과 UV 사본 메시를 다시 배정한다(충돌체는 원본 메시 그대로).</summary>
+        static int ApplyBridgeLook(string area, Dictionary<string, Material> mats)
+        {
+            int n = 0;
+            var world = GameObject.Find("World");
+            if (world == null) return 0;
+            foreach (Transform tile in world.transform)
+            {
+                var br = tile.Find("Bridges");
+                if (br == null) continue;
+                string glb = $"{TileAssetRoot}/{area}/{tile.name}/bridges.glb";
+                var originals = AssetDatabase.LoadAllAssetsAtPath(glb).OfType<Mesh>().GroupBy(x => x.name).ToDictionary(g => g.Key, g => g.First());
+                foreach (var mf in br.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    var mr = mf.GetComponent<MeshRenderer>();
+                    var bi = mf.GetComponentInParent<BridgeInfo>(true);
+                    string kind = bi != null && mats.ContainsKey(bi.kind ?? "") ? bi.kind : "road";
+                    if (mr != null) mr.sharedMaterial = mats[kind];
+                    var cur = mf.sharedMesh;
+                    if (cur == null) continue;
+                    // 원본(glb) 메시: 노드 이름(= 파이프라인 메시 이름) → UV 사본 이름에서 접두·접미사를 뗀 이름. 못 찾으면 건너뛴다(사본의 사본을 만들지 않는다)
+                    Mesh src = null;
+                    if (bi != null && !string.IsNullOrEmpty(bi.node)) originals.TryGetValue(bi.node, out src);
+                    if (src == null) originals.TryGetValue(BridgeBaseName(cur.name), out src);
+                    if (src == null)
+                    {
+                        warnings.Add($"{tile.name}: 교량 메시 {cur.name} 의 glb 원본을 찾지 못함 → UV 사본 그대로");
+                        continue;
+                    }
+                    mf.sharedMesh = EnsureBridgeUvMesh(src, $"{TileAssetRoot}/{area}/{tile.name}");
+                    n++;
+                }
+            }
+            return n;
+        }
+
+        const string UvSuffix = "_uv";
+
+        /// <summary>
+        /// 교량 메시 사본에 상자 투영 UV(<see cref="ProceduralTextures.BridgeUv"/>, Theme.bridgeTileM)를 넣어 저장한다. 같은 경로면 덮어써 GUID 유지.
+        /// 파일 이름 = 메시 이름(&lt;BR_…&gt;_uv.asset): Unity 는 새 에셋의 메시 이름을 파일 이름으로 바꾸므로, 둘이 다르면 다음 실행에서 원본을 못 찾는다(07 에서 발견).
+        /// </summary>
+        static Mesh EnsureBridgeUvMesh(Mesh src, string assetDir)
+        {
+            var copy = UnityEngine.Object.Instantiate(src);
+            copy.name = src.name + UvSuffix;
+            copy.SetUVs(0, ProceduralTextures.BridgeUv(src.vertices, src.normals, theme.bridgeTileM));
+            return SaveMeshAsset(copy, $"{assetDir}/{src.name}{UvSuffix}.asset");
+        }
+
+        /// <summary>UV 사본 메시 이름 → glb 원본 이름. 예전 이름(bridge_&lt;BR_…&gt;_uv, 겹친 접두·접미사)도 되돌린다. 테스트용으로 internal.</summary>
+        internal static string BridgeBaseName(string meshName)
+        {
+            string n = meshName ?? "";
+            while (n.EndsWith(UvSuffix, StringComparison.Ordinal)) n = n.Substring(0, n.Length - UvSuffix.Length);
+            while (n.StartsWith("bridge_", StringComparison.Ordinal)) n = n.Substring("bridge_".Length);
+            return n;
         }
 
         static string Fmt(float[] v) => v == null || v.Length == 0 ? "-" : "(" + string.Join(", ", v.Select(x => x.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture))) + ")";
@@ -96,7 +244,7 @@ namespace JourneyOn.Editor
             string root = Arg(args, "-dataRoot") ?? DefaultDataRoot();
             try
             {
-                Import(area, root);
+                Import(area, root, Theme.FromArgs(args));
                 EditorApplication.Exit(0);
             }
             catch (Exception e)
@@ -130,17 +278,21 @@ namespace JourneyOn.Editor
             public Dictionary<string, (BridgeItem item, List<Vector2> fp)> bridges = new();
         }
 
-        public static ImportReport Import(string area, string dataRoot)
+        public static ImportReport Import(string area, string dataRoot) => Import(area, dataRoot, Theme.Cozy);
+
+        public static ImportReport Import(string area, string dataRoot, Theme look)
         {
             warnings = new List<string>();
+            theme = look;
+            ProceduralTextures.ResetArtLog();
             string areaDir = Path.Combine(dataRoot, area);
             var m = LoadManifest(dataRoot, area);
-            Debug.Log($"[WorldImporter] {m.title} — manifest v{m.manifest_version}, 타일 {m.tiles.Length}개");
+            Debug.Log($"[WorldImporter] {m.title} — manifest v{m.manifest_version}, 타일 {m.tiles.Length}개, 테마 {look.name}");
 
             EnsureFolder(TileAssetRoot + "/" + area);
             EnsureFolder(GeneratedRoot);
-            var bmats = ProceduralTextures.EnsureBuildingMaterials(m.facade);
-            var waterMat = EnsureWaterMaterial();
+            var bmats = ProceduralTextures.EnsureBuildingMaterials(m.facade, look);
+            var waterMat = EnsureWaterMaterial(look);
             Dictionary<string, Material> bridgeMats = null;
             TerrainLayer[] roadLayers = null;
 
@@ -148,7 +300,7 @@ namespace JourneyOn.Editor
             foreach (var cam in UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsSortMode.None))
                 UnityEngine.Object.DestroyImmediate(cam.gameObject);
 
-            var report = new ImportReport { area = area, manifest_version = m.manifest_version, manifest_tiles = m.tiles.Length };
+            var report = new ImportReport { area = area, manifest_version = m.manifest_version, manifest_tiles = m.tiles.Length, theme = look.name };
             float overlap = ShoreOverlap(m, File.ReadAllText(Path.Combine(areaDir, "manifest.json")), out string overlapSrc);
             if (m.water != null) report.water_shore_clip_above_m = m.water.shore_clip_above_m;
             // 착지 허용치 = 수면 메시 자르기 기준(같지 않으면 메시 안 그 차이 띠에서 착지가 허용된다, 3차-나)
@@ -159,7 +311,7 @@ namespace JourneyOn.Editor
             report.bridge_margin_source = $"{overlapSrc} {overlap:0.0###} + {ShoreRules.BridgeMarginExtra}";
             originE = m.origin.easting;
             originN = m.origin.northing;
-            SetupEnvironment(m, report);
+            report.fog_density = ThemeApply.ApplyEnvironment(m, look);
             var world = new GameObject("World");
             var terrains = new Dictionary<(int, int), Terrain>();
             int metaTotal = 0;
@@ -208,15 +360,15 @@ namespace JourneyOn.Editor
             }
             report.bridge_footprints = footprints.Count;
 
-            var groundTex = EnsureGroundTexture();
+            var groundTex = ProceduralTextures.EnsureGroundTexture(look, out float groundTile, out Vector4 groundTint);
             var uvCheck = new FacadeUvAccumulator(m.facade);
             foreach (var p in pending)
             {
                 var tj = p.tj;
                 if (tj.dem != null && !string.IsNullOrEmpty(tj.dem.file))
                 {
-                    if (tj.HasRoads && roadLayers == null) roadLayers = ProceduralTextures.EnsureRoadLayers();
-                    var terr = BuildTerrain(m, tj, p.tileDir, p.assetDir, p.go, groundTex, roadLayers, report);
+                    if (tj.HasRoads && roadLayers == null) roadLayers = ProceduralTextures.EnsureRoadLayers(look);
+                    var terr = BuildTerrain(m, tj, p.tileDir, p.assetDir, p.go, groundTex, groundTile, groundTint, roadLayers, report);
                     terrains[(p.t.e0, p.t.n0)] = terr;
                     report.terrains++;
                 }
@@ -229,7 +381,7 @@ namespace JourneyOn.Editor
                 }
                 if (tj.HasBridges)
                 {
-                    bridgeMats ??= ProceduralTextures.EnsureBridgeMaterials();
+                    bridgeMats ??= ProceduralTextures.EnsureBridgeMaterials(look);
                     report.bridge_nodes += BuildBridges(p, bridgeMats);
                 }
             }
@@ -281,6 +433,8 @@ namespace JourneyOn.Editor
             AssetDatabase.SaveAssets();
 
             report.heightmap_pixel_error = HeightmapPixelError;
+            report.art_used = ProceduralTextures.ArtUsed.ToArray();
+            report.art_missing = ProceduralTextures.ArtMissing.ToArray();
             report.scene = scenePath;
             report.warnings = warnings.ToArray();
             report.imported_at = DateTime.Now.ToString("s");
@@ -292,12 +446,13 @@ namespace JourneyOn.Editor
                       $"교량 {report.bridge_nodes}/{report.bridge_items}(여유 {report.bridge_margin_m:0.0} m; 물가 벽 변 {report.shore_edges_total} 중 교량 {report.shore_edges_bridge_near}: " +
                       $"낮춤 {report.shore_edges_bridge_lowered}, 뺌 {report.shore_edges_bridge_removed}, 끝 구역 {report.shore_edges_bridge_end}, 옆면 유지 {report.shore_edges_bridge_side_kept}, 미확인 {report.shore_edges_bridge_unresolved}; " +
                       $"끝 진입 통과 {report.bridge_access.ends_passed}/{report.bridge_access.ends_land}, 막힘 {report.bridge_access.ends_blocked}(벽 {report.bridge_access.ends_blocked_wall}·단 {report.bridge_access.ends_blocked_step}), 물 위 {report.bridge_access.ends_water}, 연결부 {report.bridge_access.ends_joint}, 건물 {report.bridge_access.ends_building}), " +
-                      $"수면 타일 {report.water_tiles}, 원경 {report.skirt_nodes}+수면 {report.skirt_water_nodes}, 축 {(report.axis_ok ? "OK" : "FAIL")}, 경고 {warnings.Count}");
+                      $"수면 타일 {report.water_tiles}, 원경 {report.skirt_nodes}+수면 {report.skirt_water_nodes}, 축 {(report.axis_ok ? "OK" : "FAIL")}, " +
+                      $"테마 {look.name}(생성 이미지 {report.art_used.Length}개, 코드 생성 대체 {report.art_missing.Length}개), 경고 {warnings.Count}");
             return report;
         }
 
         // ------------------------------------------------------------------ 지형(+C2 도로 마스크)
-        static Terrain BuildTerrain(AreaManifest m, TileJson tj, string tileDir, string assetDir, GameObject tileGo, Texture2D groundTex,
+        static Terrain BuildTerrain(AreaManifest m, TileJson tj, string tileDir, string assetDir, GameObject tileGo, Texture2D groundTex, float groundTile, Vector4 groundTint,
                                     TerrainLayer[] roadLayers, ImportReport report)
         {
             var hm = m.heightmap;
@@ -334,8 +489,9 @@ namespace JourneyOn.Editor
             }
             else
             {
-                layer.diffuseTexture = groundTex;   // 기획서 대비책: 정사영상 전에는 단색 계열 재질
-                layer.tileSize = new Vector2(25f, 25f);   // 1000 m 를 나누어떨어지게(타일 경계 무늬 이음)
+                layer.diffuseTexture = groundTex;   // 기획서 대비책: 정사영상 전에는 테마 잔디 재질(D-014)
+                layer.tileSize = new Vector2(groundTile, groundTile);   // 1000 m 를 나누어떨어지게(타일 경계 무늬 이음)
+                ProceduralTextures.SetLayerTint(layer, groundTint);
             }
             layer.tileOffset = Vector2.zero;
             layer.smoothness = 0f;
@@ -437,9 +593,10 @@ namespace JourneyOn.Editor
                 nodeT ??= go.transform;
                 nodes.Add(nodeT);
                 string cls = meta != null && mats.wall.ContainsKey(meta.usage_class ?? "") ? meta.usage_class : "other";
+                string key = meta != null && !string.IsNullOrEmpty(meta.id) ? meta.id : go.name;   // 틴트 변형 해시 키(RefreshLook 과 같다)
                 var mesh = mf.sharedMesh;
                 var mr = go.GetComponent<MeshRenderer>();
-                if (mr != null && mesh != null) mr.sharedMaterials = PickBuildingMaterials(mesh, mr, cls, mats);
+                if (mr != null && mesh != null) mr.sharedMaterials = PickBuildingMaterials(mesh, mr, cls, key, mats);
                 if (mesh != null) uvCheck.Add(mesh, meta, nodeT.name, cls);
                 var mc = go.AddComponent<MeshCollider>();
                 mc.sharedMesh = mesh;
@@ -460,20 +617,23 @@ namespace JourneyOn.Editor
         /// 계약 C1: submesh 2개 = [벽, 지붕] → [&lt;cls&gt;.mat, roof_&lt;cls&gt;.mat]. 1개(v1) = 벽 재질만.
         /// UV(TEXCOORD_0)가 없는 v1 메시는 텍스처 한 점만 찍히므로 같은 색의 단색 재질(flat_&lt;cls&gt;.mat)을 쓴다.
         /// glTFast 가 정점 형식이 다른 프리미티브를 자식 메시로 나눈 경우에는 glb 재질 이름 M_roof 로 지붕을 알아본다.
+        /// 벽·지붕은 테마 틴트 변형 중 건물 키(id) 해시로 고른다(D-014, 매번 같다).
         /// </summary>
-        static Material[] PickBuildingMaterials(Mesh mesh, MeshRenderer mr, string cls, ProceduralTextures.BuildingMaterials mats)
+        static Material[] PickBuildingMaterials(Mesh mesh, MeshRenderer mr, string cls, string key, ProceduralTextures.BuildingMaterials mats)
         {
             bool hasUv = mesh.HasVertexAttribute(VertexAttribute.TexCoord0);
             int sub = mesh.subMeshCount;
+            var wall = mats.For(ProceduralTextures.Slot.Wall, cls, key);
+            var roof = mats.For(ProceduralTextures.Slot.Roof, cls, key);
             if (!hasUv) return Enumerable.Repeat(mats.flat[cls], Mathf.Max(1, sub)).ToArray();
             if (sub >= 2)
             {
                 var arr = new Material[sub];
-                for (int i = 0; i < sub; i++) arr[i] = i == 1 ? mats.roof[cls] : mats.wall[cls];
+                for (int i = 0; i < sub; i++) arr[i] = i == 1 ? roof : wall;
                 return arr;
             }
             bool isRoof = mr.sharedMaterial != null && mr.sharedMaterial.name.StartsWith("M_roof", StringComparison.Ordinal);
-            return new[] { isRoof ? mats.roof[cls] : mats.wall[cls] };
+            return new[] { isRoof ? roof : wall };
         }
 
         static (Transform node, BuildingMeta meta) FindMeta(Transform t, Dictionary<string, BuildingMeta> byNode)
@@ -615,7 +775,8 @@ namespace JourneyOn.Editor
                 if (string.IsNullOrEmpty(kind) || !mats.ContainsKey(kind)) kind = "road";
                 if (mr != null) { mr.sharedMaterial = mats[kind]; mr.shadowCastingMode = ShadowCastingMode.On; }
                 mf.gameObject.layer = 0;   // 걷기·착지·클릭 레이캐스트 모두 맞아야 한다
-                mf.gameObject.AddComponent<MeshCollider>().sharedMesh = mf.sharedMesh;
+                mf.gameObject.AddComponent<MeshCollider>().sharedMesh = mf.sharedMesh;   // 충돌체는 glb 원본 메시
+                if (mf.sharedMesh != null) mf.sharedMesh = EnsureBridgeUvMesh(mf.sharedMesh, p.assetDir);   // 보이는 메시만 UV 사본(D-014)
                 mf.gameObject.isStatic = true;
                 if (!nodes.Add(nodeT)) continue;
                 if (rec.item == null) warnings.Add($"{p.t.name}: 교량 노드 {nodeT.name} 이 tile.json bridges.items 에 없음");
@@ -1140,7 +1301,7 @@ namespace JourneyOn.Editor
         }
 
         /// <summary>
-        /// 멀리서 본 범위 안 지면의 평균 알베도(선형): 타일마다 레이어 텍스처 평균색을 알파맵 덮임 비율로 가중해 평균한다.
+        /// 멀리서 본 범위 안 지면의 평균 알베도(선형): 타일마다 레이어 텍스처 평균색 × 레이어 색 곱(diffuseRemapMax)을 알파맵 덮임 비율로 가중해 평균한다.
         /// basemap 거리(1500 m) 안팎으로 색이 바뀌지 않음을 05b-나에서 확인했다. coverage = [바탕, 아스팔트, 보도, 자갈] 평균 비율.
         /// </summary>
         public static (Color albedo, float[] coverage) GroundAlbedo(IEnumerable<Terrain> terrains)
@@ -1178,7 +1339,8 @@ namespace JourneyOn.Editor
                     if (tex == null) continue;
                     string path = AssetDatabase.GetAssetPath(tex);
                     if (!cache.TryGetValue(path, out var c)) cache[path] = c = AverageLinear(new[] { path });
-                    r += w[i] * c.r; g += w[i] * c.g; b += w[i] * c.b;
+                    var tint = layers[i].diffuseRemapMax;   // 레이어 색 곱(URP Color Tint, 선형) — 테마가 생성 이미지에 건다
+                    r += w[i] * c.r * tint.x; g += w[i] * c.g * tint.y; b += w[i] * c.b * tint.z;
                 }
             }
             if (nt == 0) return (Color.black, new float[4]);
@@ -1378,6 +1540,7 @@ namespace JourneyOn.Editor
             var smoke = player.AddComponent<SmokeProbe>();
             smoke.originE = m.origin.easting;
             smoke.originN = m.origin.northing;
+            ThemeApply.ApplyPlayerLook(theme);   // 카메라 후처리·안티에일리어싱, HUD 테마
         }
 
         public static float GroundHeight(AreaManifest m, Dictionary<(int, int), Terrain> terrains, float x, float z)
@@ -1388,45 +1551,9 @@ namespace JourneyOn.Editor
             return terr.SampleHeight(new Vector3(x, 0, z)) + terr.transform.position.y;
         }
 
-        static void SetupEnvironment(AreaManifest m, ImportReport report)
-        {
-            var sun = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None).FirstOrDefault(l => l.type == LightType.Directional);
-            if (sun == null) sun = new GameObject("Sun").AddComponent<Light>();
-            sun.type = LightType.Directional;
-            sun.name = "Sun";
-            sun.transform.rotation = Quaternion.Euler(42f, -35f, 0f);
-            sun.intensity = 1.6f;
-            sun.color = new Color(1f, 0.96f, 0.9f);
-            sun.shadows = LightShadows.Soft;
-            RenderSettings.sun = sun;
-            RenderSettings.fog = true;
-            RenderSettings.fogMode = FogMode.Exponential;
-            RenderSettings.fogDensity = FogDensity(m);
-            RenderSettings.fogColor = new Color(0.74f, 0.81f, 0.88f);
-            RenderSettings.ambientMode = AmbientMode.Skybox;
-            report.fog_density = RenderSettings.fogDensity;
-
-            // 범위 밖 지평선 아래가 기본 갈색으로 보이지 않게, 하늘의 지면색을 안개색 계열로 맞춘다
-            RenderSettings.skybox = EnsureSkyMaterial();
-        }
-
         // ------------------------------------------------------------------ 재질·텍스처(값은 매번 덮어쓴다, 05b-나)
-        static Material EnsureSkyMaterial()
-        {
-            EnsureFolder(MaterialRoot);
-            string skyPath = MaterialRoot + "/Sky.mat";
-            var sky = AssetDatabase.LoadAssetAtPath<Material>(skyPath);
-            if (sky == null) { sky = new Material(Shader.Find("Skybox/Procedural")) { name = "Sky" }; AssetDatabase.CreateAsset(sky, skyPath); }
-            sky.SetColor("_GroundColor", new Color(0.62f, 0.68f, 0.70f));
-            sky.SetColor("_SkyTint", new Color(0.50f, 0.55f, 0.62f));
-            sky.SetFloat("_AtmosphereThickness", 0.9f);
-            sky.SetFloat("_Exposure", 1.15f);
-            sky.SetFloat("_SunSize", 0.035f);
-            EditorUtility.SetDirty(sky);
-            return sky;
-        }
-
-        static Material EnsureWaterMaterial()
+        // 조명·하늘·안개·후처리는 ThemeApply.ApplyEnvironment, 지면·도로·건물·교량 텍스처는 ProceduralTextures(테마 값)
+        static Material EnsureWaterMaterial(Theme t)
         {
             EnsureFolder(MaterialRoot);
             string wp = $"{MaterialRoot}/Water.mat";
@@ -1434,8 +1561,10 @@ namespace JourneyOn.Editor
             if (water == null) { water = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = "Water" }; AssetDatabase.CreateAsset(water, wp); }
             water.SetFloat("_Surface", 1f);       // Transparent
             water.SetFloat("_Blend", 0f);
-            water.SetColor("_BaseColor", new Color(0.16f, 0.33f, 0.42f, 0.88f));
-            water.SetFloat("_Smoothness", 0.92f);
+            water.SetColor("_BaseColor", t.waterColor);
+            water.SetFloat("_Smoothness", t.waterSmoothness);
+            water.SetFloat("_SpecularHighlights", t.waterSunGlint ? 1f : 0f);   // 해 반짝임(끄면 하늘 반사만)
+            if (t.waterSunGlint) water.DisableKeyword("_SPECULARHIGHLIGHTS_OFF"); else water.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
             water.SetOverrideTag("RenderType", "Transparent");
             water.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
             water.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
@@ -1444,29 +1573,6 @@ namespace JourneyOn.Editor
             water.renderQueue = (int)RenderQueue.Transparent;
             EditorUtility.SetDirty(water);
             return water;
-        }
-
-        static Texture2D EnsureGroundTexture()
-        {
-            string p = GeneratedRoot + "/ground.png";
-            if (!File.Exists(p))
-            {
-                const int n = 256;
-                var tex = new Texture2D(n, n, TextureFormat.RGB24, true);
-                var rnd = new System.Random(7);
-                var px = new Color[n * n];
-                for (int y = 0; y < n; y++)
-                    for (int x = 0; x < n; x++)
-                    {
-                        float f = Mathf.PerlinNoise(x * 0.05f, y * 0.05f) * 0.6f + Mathf.PerlinNoise(x * 0.21f, y * 0.21f) * 0.4f;
-                        float j = (float)rnd.NextDouble() * 0.04f;
-                        px[y * n + x] = Color.Lerp(new Color(0.36f, 0.42f, 0.27f), new Color(0.50f, 0.50f, 0.36f), f) + new Color(j, j, j);
-                    }
-                tex.SetPixels(px);
-                File.WriteAllBytes(p, tex.EncodeToPNG());
-                AssetDatabase.ImportAsset(p, ImportAssetOptions.ForceSynchronousImport);
-            }
-            return AssetDatabase.LoadAssetAtPath<Texture2D>(p);
         }
 
         // ------------------------------------------------------------------ 유틸

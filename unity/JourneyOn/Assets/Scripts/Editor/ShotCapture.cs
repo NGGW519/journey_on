@@ -10,7 +10,8 @@ namespace JourneyOn.Editor
     /// 검수용 스크린샷. 정해진 시점(EPSG:5186 좌표 기준)에서 씬을 렌더링해 PNG 로 저장한다.
     /// 배치 모드(-nographics 없이): -executeMethod JourneyOn.Editor.ShotCapture.CaptureFromCommandLine -area phase1
     ///   [-outDir &lt;dir&gt;] [-prefix &lt;파일 접두사, 기본 area&gt;] [-views name1,name2] [-basemapDistance &lt;m&gt;(진단용, 저장 안 함)]
-    ///   [-showShoreWalls(진단용: 물가 벽을 반투명 빨강으로, 저장 안 함)]
+    ///   [-showShoreWalls(진단용: 물가 벽을 반투명 빨강으로, 저장 안 함)] [-noTiltShift(조감 틸트시프트 끔, 검수용 선명 사진)]
+    /// 씬에 적용된 테마(WorldLook)대로 찍는다: cozy 는 후처리를 켜고, 눈 높이 8 m 이상 시점에 틸트시프트를 건다(30 m 이상 최대).
     /// </summary>
     public static class ShotCapture
     {
@@ -104,7 +105,8 @@ namespace JourneyOn.Editor
             float basemap = float.TryParse(CaptureCommon.Arg(args, "-basemapDistance"), System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture, out var bd) ? bd : -1f;
             bool showWalls = CaptureCommon.Flag(args, "-showShoreWalls");
-            try { Capture(area, outDir, prefix, only, basemap, showWalls); EditorApplication.Exit(0); }
+            bool noTilt = CaptureCommon.Flag(args, "-noTiltShift");
+            try { Capture(area, outDir, prefix, only, basemap, showWalls, noTilt); EditorApplication.Exit(0); }
             catch (Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
         }
 
@@ -115,7 +117,8 @@ namespace JourneyOn.Editor
             Capture("phase1", Path.Combine(CaptureCommon.RepoRoot, "_workspace", "screens"), "phase1", null, -1f);
         }
 
-        public static void Capture(string area, string outDir, string prefix, string only, float basemapDistance = -1f, bool showShoreWalls = false)
+        public static void Capture(string area, string outDir, string prefix, string only, float basemapDistance = -1f, bool showShoreWalls = false,
+                                   bool noTilt = false)
         {
             var a = CaptureCommon.OpenArea(area);
             CaptureCommon.OverrideBasemapDistance(basemapDistance);
@@ -141,10 +144,12 @@ namespace JourneyOn.Editor
                     if (v.targetAgl) target.y = a.Ground(target) + v.tz;
                     cam.transform.position = eye;
                     cam.transform.LookAt(target);
-                    CaptureCommon.Render(cam, rt, tex);
+                    // 틸트시프트: 조감 시점만(테마, 보행 높이 1.7 m 시점은 0). 초점 = 바라보는 점
+                    float tilt = noTilt ? 0f : a.theme.TiltStrength(v.eyeAgl);
+                    CaptureCommon.Render(cam, rt, tex, a.theme, tilt, target);
                     string file = Path.Combine(outDir, $"{prefix}_{v.name}.png");
                     File.WriteAllBytes(file, tex.EncodeToPNG());
-                    Debug.Log($"[ShotCapture] {file} eye=({eye.x:0},{eye.y:0},{eye.z:0}) EN=({vx:0},{vy:0}) target=({target.x:0},{target.y:0},{target.z:0}) far={cam.farClipPlane:0}");
+                    Debug.Log($"[ShotCapture] {file} eye=({eye.x:0},{eye.y:0},{eye.z:0}) EN=({vx:0},{vy:0}) target=({target.x:0},{target.y:0},{target.z:0}) far={cam.farClipPlane:0} tilt={tilt:0.00}");
                 }
             }
             finally

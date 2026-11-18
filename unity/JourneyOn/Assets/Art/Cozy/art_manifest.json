@@ -1,0 +1,1016 @@
+{
+  "theme": "cozy",
+  "generator": "art (python -m art), MonoGPT router (OpenAI-compatible) image generation",
+  "endpoint": "https://monogpt.kr/api/monorouter/v1 (/images/generations, /chat/completions)",
+  "updated_at": "2026-11-18T16:42:34+09:00",
+  "license_note": "생성형 일반 소재 텍스처. 특정 장소·건물 재현 아님. 지도·로드뷰·실사진 참조 없음. 이용조건은 docs/DATA_SOURCES.md '아트 에셋(생성형)'.",
+  "calls": {
+    "total": 30,
+    "by_status": {
+      "400": 4,
+      "200": 24,
+      "404": 2
+    },
+    "by_model": {
+      "gemini-nano-banana-2.1": 2,
+      "gemini-3-pro-image": 8,
+      "gpt-image-2.6-flare": 2,
+      "gpt-image-2.6-sunburst": 18
+    },
+    "note": "비교·재생성·실패 호출 포함 전체 API 호출 수(art/raw/<theme>/_calls.jsonl 집계)"
+  },
+  "files": {
+    "bridge_foot.jpg": {
+      "asset": "bridge_foot",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "Footbridge deck: warm honey-colored wooden planks running horizontally across the full width, even plank widths, soft wood grain, a few tiny round nail heads, gentle color variation between planks. No gaps showing water, no railings, no edges.\n\nSeen from directly above, looking straight down, made as a repeating texture tile. Detail is evenly distributed over the whole image with no focal point, no border, no vignette, no lighting gradient, uniform brightness.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:40:24+09:00",
+      "raw_file": "art/raw/cozy/bridge_foot__74367fb6.png",
+      "raw_sha256": "7b5f9b779b369920b9e0c37aebb5ff429a1e8a7b8e6f549e02da151ad89e4422",
+      "postprocess": {
+        "kind": "tile",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 876,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.002841,
+            "detail_rho": 0.541
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 869,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.00401,
+            "detail_rho": 0.519
+          }
+        },
+        "color": {
+          "flatten": 0.4,
+          "mean_luma_in": 0.689,
+          "mean_sat_in": 0.613,
+          "saturation_scale": 0.751,
+          "mean_luma_out": 0.689
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0096,
+          "seam_x_ratio": 0.96,
+          "seam_y": 0.0768,
+          "seam_y_ratio": 2.57
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "46cc266e6578073f6b767d51dc703cefd41e1824b1ce452ab53da82800b7e256"
+    },
+    "bridge_rail.jpg": {
+      "asset": "bridge_rail",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "Railway bridge deck: smooth pale warm-gray concrete slab with soft subtle mottling and a few faint formwork panel seams, very low contrast. No rails, no sleepers, no railings, no edges.\n\nSeen from directly above, looking straight down, made as a repeating texture tile. Detail is evenly distributed over the whole image with no focal point, no border, no vignette, no lighting gradient, uniform brightness.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:40:42+09:00",
+      "raw_file": "art/raw/cozy/bridge_rail__7400cc54.png",
+      "raw_sha256": "30c97b92c9309ff2bac00f7b7a6cd87d0f0bed0381461c27060800b70eace477",
+      "postprocess": {
+        "kind": "tile",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 838,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.000572,
+            "detail_rho": 0.126
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 862,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.000618,
+            "detail_rho": 0.085
+          }
+        },
+        "color": {
+          "flatten": 0.6,
+          "mean_luma_in": 0.85,
+          "mean_sat_in": 0.127,
+          "mean_luma_out": 0.85
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0085,
+          "seam_x_ratio": 0.96,
+          "seam_y": 0.0115,
+          "seam_y_ratio": 1.07
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "a0383bc5982dc893ded89da8a987913cb4822bdfb7e0c5525e385a173841e249"
+    },
+    "bridge_road.jpg": {
+      "asset": "bridge_road",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "Bridge deck road surface: light gray asphalt, slightly warmer and smoother than a street, fine soft grain, very low contrast. No lane markings, no painted lines, no expansion joints, no railings, no curb.\n\nSeen from directly above, looking straight down, made as a repeating texture tile. Detail is evenly distributed over the whole image with no focal point, no border, no vignette, no lighting gradient, uniform brightness.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:40:34+09:00",
+      "raw_file": "art/raw/cozy/bridge_road__30392f15.png",
+      "raw_sha256": "e954155f84d2817e2d83aac7f85fa4f7f440f2106fe18a5a4a7413a34023bb7f",
+      "postprocess": {
+        "kind": "tile",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 856,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.000983,
+            "detail_rho": 0.041
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 854,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.001063,
+            "detail_rho": 0.039
+          }
+        },
+        "color": {
+          "flatten": 0.7,
+          "contrast": 0.85,
+          "mean_luma_in": 0.782,
+          "mean_sat_in": 0.083,
+          "mean_luma_out": 0.782
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0091,
+          "seam_x_ratio": 1.04,
+          "seam_y": 0.0129,
+          "seam_y_ratio": 1.06
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "913e48e66f590c92d439e7839a2f82bc88c8efa7c98cc8b6754982ff37c31eb3"
+    },
+    "facade_commercial.jpg": {
+      "asset": "facade_commercial",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "A cute small shop wall. Wall: light cream-white painted wall, evenly colored. One wide shop window of clear pale aqua glass with a slim white frame, centered, about 62 percent of the tile width and 45 percent of the tile height, with a short scalloped fabric awning in coral and cream vertical stripes directly above the glass and a tiny potted plant on the sill. The awning and window together stay inside the central area, leaving plain wall at least 15 percent wide on every side.\n\nStraight-on flat front elevation of exactly one window bay of one storey of an exterior wall, made as a repeating texture tile: the tile is placed side by side and stacked floor upon floor, so the wall must look the same along the top edge as along the bottom edge, and the same along the left edge as along the right edge. Plain wall surrounds the window on all four sides with a margin of at least 15 percent of the tile. Nothing else in the image: no ground, no grass, no foundation, no stone base, no plinth, no baseboard, no floor line, no roof, no eaves, no cornice, no gutter, no sky, no door, no border around the image, no vignette.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:38:08+09:00",
+      "raw_file": "art/raw/cozy/facade_commercial__359adb04.png",
+      "raw_sha256": "9d3c05302c889d74c3bd465c4517d47178ff5b95968f5ec0cba184471700dafd",
+      "postprocess": {
+        "kind": "facade",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 948,
+            "band_px": 61,
+            "search_px": 61,
+            "band_mse": 9.1e-05,
+            "detail_rho": 0.054
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 930,
+            "band_px": 61,
+            "search_px": 61,
+            "band_mse": 0.000143,
+            "detail_rho": 0.048
+          },
+          "recenter": {
+            "roll_px": [
+              -38,
+              -49
+            ],
+            "feature_ratio": 0.269
+          }
+        },
+        "color": {
+          "mean_luma_in": 0.905,
+          "mean_sat_in": 0.195,
+          "mean_luma_out": 0.905
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0056,
+          "seam_x_ratio": 0.77,
+          "seam_y": 0.0075,
+          "seam_y_ratio": 0.82
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "49ea82804f2d628ea3e6e6e37c298691b5dc3befad588b0f2240cd86208c5209"
+    },
+    "facade_industrial.jpg": {
+      "asset": "facade_industrial",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1536x1024",
+      "quality": "high",
+      "prompt": "A tidy small factory or warehouse wall, wide 3:2 tile. Wall: corrugated metal cladding with evenly spaced vertical ribs running straight from the top edge to the bottom edge without any horizontal break, soft pale mint green with light gray highlights. One long horizontal strip of high clerestory windows (four panes with slim white frames side by side) centered horizontally and placed slightly above the middle, about 60 percent of the tile width and 24 percent of the tile height, with plain ribbed panel above and below it.\n\nStraight-on flat front elevation of exactly one window bay of one storey of an exterior wall, made as a repeating texture tile: the tile is placed side by side and stacked floor upon floor, so the wall must look the same along the top edge as along the bottom edge, and the same along the left edge as along the right edge. Plain wall surrounds the window on all four sides with a margin of at least 15 percent of the tile. Nothing else in the image: no ground, no grass, no foundation, no stone base, no plinth, no baseboard, no floor line, no roof, no eaves, no cornice, no gutter, no sky, no door, no border around the image, no vignette.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:37:56+09:00",
+      "raw_file": "art/raw/cozy/facade_industrial__773fc1dc.png",
+      "raw_sha256": "d767b5962ace65907965e781035e3a11979fbe5d74fbc421db350dd9b730cc0b",
+      "postprocess": {
+        "kind": "facade",
+        "raw_size": [
+          1536,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1536,
+            "period": 1384,
+            "band_px": 92,
+            "search_px": 92,
+            "band_mse": 0.000796,
+            "detail_rho": 0.619
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 960,
+            "band_px": 61,
+            "search_px": 61,
+            "band_mse": 0.000273,
+            "detail_rho": 0.826
+          },
+          "recenter": {
+            "roll_px": [
+              -42,
+              10
+            ],
+            "feature_ratio": 0.379
+          }
+        },
+        "color": {
+          "mean_luma_in": 0.846,
+          "mean_sat_in": 0.144,
+          "mean_luma_out": 0.846
+        },
+        "out_size": [
+          1536,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0085,
+          "seam_x_ratio": 0.48,
+          "seam_y": 0.0057,
+          "seam_y_ratio": 0.73
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "3dfa8b2f7fcdc3b041e7732d14d960671f1f4dda6f72c6465d1af975bc0ce282"
+    },
+    "facade_other.jpg": {
+      "asset": "facade_other",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "A humble simple small building wall. Wall: plain soft light beige plaster with a few very faint hand-painted strokes, evenly colored. One small simple square wooden window with four panes and a honey-colored wooden frame, centered, about 34 percent of the tile width and 40 percent of the tile height.\n\nStraight-on flat front elevation of exactly one window bay of one storey of an exterior wall, made as a repeating texture tile: the tile is placed side by side and stacked floor upon floor, so the wall must look the same along the top edge as along the bottom edge, and the same along the left edge as along the right edge. Plain wall surrounds the window on all four sides with a margin of at least 15 percent of the tile. Nothing else in the image: no ground, no grass, no foundation, no stone base, no plinth, no baseboard, no floor line, no roof, no eaves, no cornice, no gutter, no sky, no door, no border around the image, no vignette.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:38:10+09:00",
+      "raw_file": "art/raw/cozy/facade_other__d4b884c7.png",
+      "raw_sha256": "f3d414624058db2e0ea63d075a6f4816ce5fb5cdc5362359cddc4f97de6bd333",
+      "postprocess": {
+        "kind": "facade",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 960,
+            "band_px": 61,
+            "search_px": 61,
+            "band_mse": 0.000121,
+            "detail_rho": 0.057
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 960,
+            "band_px": 61,
+            "search_px": 61,
+            "band_mse": 0.000199,
+            "detail_rho": 0.055
+          },
+          "recenter": {
+            "roll_px": [
+              -30,
+              -38
+            ],
+            "feature_ratio": 0.2
+          }
+        },
+        "color": {
+          "mean_luma_in": 0.868,
+          "mean_sat_in": 0.309,
+          "saturation_scale": 0.647,
+          "mean_luma_out": 0.868
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0061,
+          "seam_x_ratio": 0.79,
+          "seam_y": 0.008,
+          "seam_y_ratio": 0.87
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "8b012edc7045d37ecc6cc4f46459506d0bd4f04e03eff59ce4e3610d9d05967b"
+    },
+    "facade_public.jpg": {
+      "asset": "facade_public",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "A friendly public building wall, like a small town hall or school. Wall: pale powder-blue painted wall, evenly colored. One large rectangular window centered, with a crisp white frame divided into six panes and a simple white sill, about 55 percent of the tile width and 52 percent of the tile height. The glass panes are calm pale sky-blue with a soft diagonal reflection highlight; no curtains, no furniture, no plants or other objects behind the glass.\n\nStraight-on flat front elevation of exactly one window bay of one storey of an exterior wall, made as a repeating texture tile: the tile is placed side by side and stacked floor upon floor, so the wall must look the same along the top edge as along the bottom edge, and the same along the left edge as along the right edge. Plain wall surrounds the window on all four sides with a margin of at least 15 percent of the tile. Nothing else in the image: no ground, no grass, no foundation, no stone base, no plinth, no baseboard, no floor line, no roof, no eaves, no cornice, no gutter, no sky, no door, no border around the image, no vignette.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:39:41+09:00",
+      "raw_file": "art/raw/cozy/facade_public__afc202eb.png",
+      "raw_sha256": "811d1f050866d2b0a656fa5f506be0df644f7bacf55310ecb7d7c7b4071b654b",
+      "postprocess": {
+        "kind": "facade",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 924,
+            "band_px": 61,
+            "search_px": 61,
+            "band_mse": 0.000126,
+            "detail_rho": 0.068
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 940,
+            "band_px": 61,
+            "search_px": 61,
+            "band_mse": 0.000154,
+            "detail_rho": 0.072
+          },
+          "recenter": {
+            "roll_px": [
+              -48,
+              -66
+            ],
+            "feature_ratio": 0.221
+          }
+        },
+        "color": {
+          "mean_luma_in": 0.859,
+          "mean_sat_in": 0.223,
+          "mean_luma_out": 0.859
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0076,
+          "seam_x_ratio": 0.93,
+          "seam_y": 0.0106,
+          "seam_y_ratio": 1.07
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "3a1400bb36a3718228390f2b0b33ba117855035402275041b2f027a12afd2607"
+    },
+    "facade_residential.jpg": {
+      "asset": "facade_residential",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "A cozy residential house wall. Wall: smooth hand-plastered warm cream wall with a very subtle soft texture, evenly colored, no scattered stones. Window: one mint-green window centered in the tile, with a softly arched top, and a delicate traditional Korean wooden lattice (changsal) pattern faintly visible behind the glass, plus a small wooden flower box with tiny pastel flowers under the sill. The window with its flower box is about 40 percent of the tile width and about 55 percent of the tile height.\n\nStraight-on flat front elevation of exactly one window bay of one storey of an exterior wall, made as a repeating texture tile: the tile is placed side by side and stacked floor upon floor, so the wall must look the same along the top edge as along the bottom edge, and the same along the left edge as along the right edge. Plain wall surrounds the window on all four sides with a margin of at least 15 percent of the tile. Nothing else in the image: no ground, no grass, no foundation, no stone base, no plinth, no baseboard, no floor line, no roof, no eaves, no cornice, no gutter, no sky, no door, no border around the image, no vignette.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:34:52+09:00",
+      "raw_file": "art/raw/cozy/facade_residential__1ce8b050.png",
+      "raw_sha256": "1974eb762ed603cc3c864e0c5ea225d24b5d200357b026160d378b340e45a383",
+      "postprocess": {
+        "kind": "facade",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 936,
+            "band_px": 61,
+            "search_px": 61,
+            "band_mse": 0.000187,
+            "detail_rho": 0.049
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 904,
+            "band_px": 61,
+            "search_px": 61,
+            "band_mse": 0.000246,
+            "detail_rho": 0.034
+          },
+          "recenter": {
+            "roll_px": [
+              -38,
+              -102
+            ],
+            "feature_ratio": 0.253
+          }
+        },
+        "color": {
+          "mean_luma_in": 0.86,
+          "mean_sat_in": 0.293,
+          "mean_luma_out": 0.86
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0076,
+          "seam_x_ratio": 0.7,
+          "seam_y": 0.0113,
+          "seam_y_ratio": 0.88
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "857e8d4910407b19cdae797feb8dd5a26d7ca6165abee8ec6f55e90714731a44"
+    },
+    "ground_grass.jpg": {
+      "asset": "ground_grass",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "Lawn: soft fresh light green short grass drawn with gentle painterly strokes, low contrast, with only a sparse sprinkle of tiny pastel flowers (white, pale pink, butter yellow) evenly scattered far apart. No big clumps, no paths, no stones, no dark patches, no bare soil.\n\nSeen from directly above, looking straight down, made as a repeating texture tile. Detail is evenly distributed over the whole image with no focal point, no border, no vignette, no lighting gradient, uniform brightness.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:38:08+09:00",
+      "raw_file": "art/raw/cozy/ground_grass__a9641d86.png",
+      "raw_sha256": "0d0688d5f0d60041d809591297707bc771d258b16287aade51b980e6aa59ff1f",
+      "postprocess": {
+        "kind": "tile",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 922,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.001493,
+            "detail_rho": 0.008
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 848,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.001275,
+            "detail_rho": 0.027
+          }
+        },
+        "color": {
+          "flatten": 0.7,
+          "contrast": 0.8,
+          "mean_luma_in": 0.792,
+          "mean_sat_in": 0.544,
+          "saturation_scale": 0.772,
+          "mean_luma_out": 0.792
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0107,
+          "seam_x_ratio": 1.03,
+          "seam_y": 0.0103,
+          "seam_y_ratio": 1.15
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "a77b9909a0aa31f548d54dada3caeeed7362f441f11d48578ba33c5fb4aa3931"
+    },
+    "ground_paving.jpg": {
+      "asset": "ground_paving",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "Pedestrian sidewalk pavement: small rectangular clay bricks in a running bond pattern, pastel colors (pale pink, peach, cream, light sand) gently mixed, soft light grout lines, neat and even. No curb, no drains, no manholes.\n\nSeen from directly above, looking straight down, made as a repeating texture tile. Detail is evenly distributed over the whole image with no focal point, no border, no vignette, no lighting gradient, uniform brightness.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:40:14+09:00",
+      "raw_file": "art/raw/cozy/ground_paving__cd3e0200.png",
+      "raw_sha256": "24d02ce5de40d6af89ef08775748356ecfbae1f23e4517e802e179b469238216",
+      "postprocess": {
+        "kind": "tile",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 902,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.003659,
+            "detail_rho": 0.441
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 843,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.004438,
+            "detail_rho": 0.271
+          }
+        },
+        "color": {
+          "flatten": 0.5,
+          "mean_luma_in": 0.827,
+          "mean_sat_in": 0.265,
+          "mean_luma_out": 0.827
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0131,
+          "seam_x_ratio": 0.91,
+          "seam_y": 0.0154,
+          "seam_y_ratio": 0.74
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "3153940ce0b38b4e016d1f5ec4a57d29f6c95b50bb63f9dc3c9d7bf80eaf0ea1"
+    },
+    "rail_ballast.jpg": {
+      "asset": "rail_ballast",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "Railway track bed: pale gray-beige crushed stone ballast gravel covering the whole image, with a few faint low-contrast weathered wooden sleepers half buried in the gravel, widely spaced, running horizontally. No steel rails, no plants, no edges.\n\nSeen from directly above, looking straight down, made as a repeating texture tile. Detail is evenly distributed over the whole image with no focal point, no border, no vignette, no lighting gradient, uniform brightness.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:40:38+09:00",
+      "raw_file": "art/raw/cozy/rail_ballast__db98c8d8.png",
+      "raw_sha256": "1ddd8fb720bd5600b896d156ca8b9e663ae2577694b778c09ee9ce2c7df73543",
+      "postprocess": {
+        "kind": "tile",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 846,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.02134,
+            "detail_rho": 0.009
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 830,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.022098,
+            "detail_rho": 0.021
+          }
+        },
+        "color": {
+          "flatten": 0.6,
+          "mean_luma_in": 0.777,
+          "mean_sat_in": 0.204,
+          "mean_luma_out": 0.777
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.028,
+          "seam_x_ratio": 0.99,
+          "seam_y": 0.0521,
+          "seam_y_ratio": 1.47
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "dfaaf9460564dafdc60b1ec7f1be497bc923c81253ed593ea4d061e634253a56"
+    },
+    "road_asphalt.jpg": {
+      "asset": "road_asphalt",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "Road surface: smooth light gray asphalt with a fine soft speckled grain, very low contrast, only subtle gentle tone variation. No lane markings, no painted lines, no cracks, no manholes, no tire marks, no curb, no puddles.\n\nSeen from directly above, looking straight down, made as a repeating texture tile. Detail is evenly distributed over the whole image with no focal point, no border, no vignette, no lighting gradient, uniform brightness.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:40:24+09:00",
+      "raw_file": "art/raw/cozy/road_asphalt__ebb8fe5d.png",
+      "raw_sha256": "802b5c192cc83aed5b77c57fcf750122c4893a29645d0626525df418cca611a8",
+      "postprocess": {
+        "kind": "tile",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 864,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.001431,
+            "detail_rho": 0.036
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 906,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.001518,
+            "detail_rho": 0.029
+          }
+        },
+        "color": {
+          "flatten": 0.7,
+          "contrast": 0.85,
+          "mean_luma_in": 0.779,
+          "mean_sat_in": 0.061,
+          "mean_luma_out": 0.779
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0112,
+          "seam_x_ratio": 1.0,
+          "seam_y": 0.0156,
+          "seam_y_ratio": 1.04
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "a62e607208959d542deff7328adcb24a32275b59c45196413d84275cb1bb5a94"
+    },
+    "roof_commercial.jpg": {
+      "asset": "roof_commercial",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "Flat rooftop floor of a shop building: small square light warm-gray ceramic tiles in a neat straight grid with thin pale grout lines, gentle color variation between tiles. No edges, no railings, no equipment, no drains.\n\nSeen from directly above, looking straight down, made as a repeating texture tile. Detail is evenly distributed over the whole image with no focal point, no border, no vignette, no lighting gradient, uniform brightness.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:39:36+09:00",
+      "raw_file": "art/raw/cozy/roof_commercial__af954f7a.png",
+      "raw_sha256": "5e2561f67e41d5c7165c6254d0bfa585e7d985c85bc3629e3d3f3d591bc33095",
+      "postprocess": {
+        "kind": "tile",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 896,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.000911,
+            "detail_rho": 0.693
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 832,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.000849,
+            "detail_rho": 0.685
+          }
+        },
+        "color": {
+          "flatten": 0.4,
+          "mean_luma_in": 0.84,
+          "mean_sat_in": 0.165,
+          "saturation_scale": 0.485,
+          "mean_luma_out": 0.84
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0308,
+          "seam_x_ratio": 2.2,
+          "seam_y": 0.0849,
+          "seam_y_ratio": 6.13
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "cdbb981498e746b163ef2a360cdaa9a99efefedfd02957bb88dbeaa3af76c7fc"
+    },
+    "roof_industrial.jpg": {
+      "asset": "roof_industrial",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "Metal roof of a small factory: powder-blue corrugated metal roof sheets with evenly spaced parallel ribs running vertically through the whole image from the top edge to the bottom edge, soft highlights on the ribs. No edges, no skylights, no vents.\n\nSeen from directly above, looking straight down, made as a repeating texture tile. Detail is evenly distributed over the whole image with no focal point, no border, no vignette, no lighting gradient, uniform brightness.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:39:35+09:00",
+      "raw_file": "art/raw/cozy/roof_industrial__aeb98baf.png",
+      "raw_sha256": "e923ff43b853ad44e68848860352f76e5a8f19cf4ab7361362af870c5e0b2db3",
+      "postprocess": {
+        "kind": "tile",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 843,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.000811,
+            "detail_rho": 0.383
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 896,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.000231,
+            "detail_rho": 0.606
+          }
+        },
+        "color": {
+          "flatten": 0.3,
+          "mean_luma_in": 0.798,
+          "mean_sat_in": 0.305,
+          "mean_luma_out": 0.798
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0097,
+          "seam_x_ratio": 0.8,
+          "seam_y": 0.0067,
+          "seam_y_ratio": 1.09
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "50b753961d3a6f3758646628aa980c5335da46c99d7c5c6f05dfd198307479c0"
+    },
+    "roof_other.jpg": {
+      "asset": "roof_other",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "Shingle roof surface: soft verdigris teal-green roof shingles with slightly rounded ends in neat overlapping horizontal rows, gentle color variation between shingles. No ridge, no edges.\n\nSeen from directly above, looking straight down, made as a repeating texture tile. Detail is evenly distributed over the whole image with no focal point, no border, no vignette, no lighting gradient, uniform brightness.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:39:41+09:00",
+      "raw_file": "art/raw/cozy/roof_other__ad12d388.png",
+      "raw_sha256": "76fa46b812831027f92fd4f4317637374a667930feddd2ff4d9a4bfcab1cf100",
+      "postprocess": {
+        "kind": "tile",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 830,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.00465,
+            "detail_rho": 0.31
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 880,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.009636,
+            "detail_rho": 0.038
+          }
+        },
+        "color": {
+          "flatten": 0.3,
+          "mean_luma_in": 0.713,
+          "mean_sat_in": 0.315,
+          "saturation_scale": 0.826,
+          "mean_luma_out": 0.713
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0162,
+          "seam_x_ratio": 0.94,
+          "seam_y": 0.0146,
+          "seam_y_ratio": 0.79
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "4a412477c3f6f8abc20f3229d4f387441c09f7117bce828db54222f4d1468335"
+    },
+    "roof_public.jpg": {
+      "asset": "roof_public",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "Flat rooftop of a public building: square pale cool-gray concrete paver tiles, a little larger than small tiles, in a neat straight grid with soft grout lines and a faint powder-blue tint, gentle color variation between pavers. No edges, no railings, no equipment, no drains.\n\nSeen from directly above, looking straight down, made as a repeating texture tile. Detail is evenly distributed over the whole image with no focal point, no border, no vignette, no lighting gradient, uniform brightness.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:39:41+09:00",
+      "raw_file": "art/raw/cozy/roof_public__662a095c.png",
+      "raw_sha256": "75734ee8cdcb5d2c9814fe9d99123e5022e0be62a53de24c2a1581d41943efcc",
+      "postprocess": {
+        "kind": "tile",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 898,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.00115,
+            "detail_rho": 0.523
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 914,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.000922,
+            "detail_rho": 0.304
+          }
+        },
+        "color": {
+          "flatten": 0.4,
+          "mean_luma_in": 0.828,
+          "mean_sat_in": 0.042,
+          "mean_luma_out": 0.828
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0268,
+          "seam_x_ratio": 2.48,
+          "seam_y": 0.0129,
+          "seam_y_ratio": 0.94
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "e5becac28394b826da20abef393a394e9a83d82efe4ca54c24216d4026602014"
+    },
+    "roof_residential.jpg": {
+      "asset": "roof_residential",
+      "model": "gpt-image-2.6-sunburst",
+      "route": "images",
+      "size": "1024x1024",
+      "quality": "high",
+      "prompt": "Clay tile roof surface: rows of rounded curved clay roof tiles in soft coral and warm orange, in neat straight horizontal rows covering the entire image, gentle color variation between individual tiles. No ridge, no roof edge, no chimney, no gutter.\n\nSeen from directly above, looking straight down, made as a repeating texture tile. Detail is evenly distributed over the whole image with no focal point, no border, no vignette, no lighting gradient, uniform brightness.\n\nArt style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game. Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture with a subtle hand-drawn feel. Soft even diffuse daylight. Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green, powder blue, light warm gray, pale beige, honey wood.\n\nRequirements: flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark, no people, no perspective, no cast shadows from outside objects.",
+      "generated_at": "2026-11-18T16:39:46+09:00",
+      "raw_file": "art/raw/cozy/roof_residential__262c1081.png",
+      "raw_sha256": "14fb26147e3b608247b53fca79aa45deffdbaafd01b0c57cc17b64e1e2ff7356",
+      "postprocess": {
+        "kind": "tile",
+        "raw_size": [
+          1024,
+          1024
+        ],
+        "seamless": {
+          "x": {
+            "axis": "x",
+            "size_in": 1024,
+            "period": 884,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.005454,
+            "detail_rho": 0.238
+          },
+          "y": {
+            "axis": "y",
+            "size_in": 1024,
+            "period": 902,
+            "band_px": 102,
+            "search_px": 102,
+            "band_mse": 0.005651,
+            "detail_rho": 0.112
+          }
+        },
+        "color": {
+          "flatten": 0.3,
+          "mean_luma_in": 0.651,
+          "gamma": 0.969,
+          "mean_sat_in": 0.591,
+          "saturation_scale": 0.778,
+          "mean_luma_out": 0.659
+        },
+        "out_size": [
+          1024,
+          1024
+        ],
+        "seam_check": {
+          "seam_x": 0.0139,
+          "seam_x_ratio": 1.04,
+          "seam_y": 0.0131,
+          "seam_y_ratio": 0.94
+        },
+        "jpg_quality": 92
+      },
+      "sha256": "4a59a9942060543fa4c22cd597b0f4484a3c5bf867b3f31aaf4960db3b7e0d2b"
+    }
+  }
+}

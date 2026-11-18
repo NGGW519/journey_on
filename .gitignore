@@ -47,3 +47,6 @@ unity/**/MemoryCaptures/
 .env.*
 .claude/settings.local.json
 *.log
+
+# 아트 생성 원본(유료 생성물 캐시, 후처리본만 Unity Assets/Art 에 커밋)
+art/raw/

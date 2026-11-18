@@ -1,0 +1,247 @@
+# 아트 테마: 아기자기(cozy). 계약은 docs/ART.md, 결정은 docs/decisions.md D-014.
+# 프롬프트 = subject(에셋) + kinds[kind].frame + style + must.
+# 프롬프트·모델·크기·품질 중 하나라도 바뀌면 캐시 키(sha8)가 바뀌어 새로 생성한다.
+theme: cozy
+raw_dir: art/raw/cozy                          # 원본 캐시(git 제외)
+out_dir: unity/JourneyOn/Assets/Art/Cozy       # 후처리본(Unity)
+sheet_dir: _workspace/art                      # 검토용 미리보기
+
+defaults:
+  model: gpt-image-2.6-sunburst                # 모델 비교로 정함(_workspace/art/model_compare/)
+  size: 1024x1024
+  quality: high                                # images 경로(OpenAI 계열)
+  gemini_image_size: 2K                        # gemini 경로(출력 해상도)
+  jpg_quality: 92
+
+# 모델별 호출 경로.
+#  images = {base}/images/generations (OpenAI 규격)
+#  gemini = {base}/gemini/v1beta/models/{model}:generateContent (Gemini 고유 규격)
+#  chat   = {base}/chat/completions 이미지 출력. 라우터가 이미지 모델을 지원하지 않아 쓰지 않는다(2026-11-18 확인)
+models:
+  gpt-image-2: {route: images}
+  gpt-image-2.5-flare: {route: images}
+  gpt-image-2.5-sunburst: {route: images}
+  gpt-image-2.6-flare: {route: images}
+  gpt-image-2.6-sunburst: {route: images}
+  gemini-3-pro-image: {route: gemini}
+  gemini-3.1-flash-image: {route: gemini}
+  gemini-nano-banana-2.1: {route: gemini}
+
+# 모델 비교(python -m art compare). 결과: _workspace/art/model_compare/
+#  1차 facade_residential: 2.6-sunburst·2.6-flare 는 벽이 고르고 반복이 깨끗. Gemini 둘은 가운데 밝고
+#     가장자리 어두운 그러데이션·붓 소용돌이 때문에 3×3 반복에서 칸 경계가 보인다.
+#  2차 ground_grass: sunburst 가 가장 고르고 꽃이 드물다. flare 는 더 촘촘, gemini-3-pro 는 큰 얼룩·사선 띠.
+#  → 전 에셋 gpt-image-2.6-sunburst (2026-11-18)
+compare:
+  asset: facade_residential
+  models: [gpt-image-2.6-sunburst, gpt-image-2.6-flare, gemini-3-pro-image, gemini-nano-banana-2.1]
+
+style: >-
+  Art style: cozy hand-painted miniature diorama, like a texture from a cute toy-town building game.
+  Soft pastel colors that are clean and bright, not muddy, not neon. Gentle painterly brush texture
+  with a subtle hand-drawn feel. Soft even diffuse daylight.
+  Shared town palette: warm cream, butter yellow, soft coral, peach, mint green, sage green,
+  powder blue, light warm gray, pale beige, honey wood.
+
+must: >-
+  flat orthographic, fills the whole frame edge to edge, seamless tileable, no text, no watermark,
+  no people, no perspective, no cast shadows from outside objects.
+
+# 종류별 틀 문구와 후처리.
+#  facade: 한 칸 × 한 층. 가장자리 띠만 섞어 창은 건드리지 않고, 창이 가운데 오도록 다시 민다.
+#  tile:   위에서 본 재질. 넓은 띠를 섞는다.
+#  band = 섞는 띠 너비(비율), search = 좌우·상하 띠가 가장 잘 맞는 위치를 찾는 범위(비율)
+kinds:
+  facade:
+    band: 0.06
+    search: 0.06
+    recenter: true
+    frame: >-
+      Straight-on flat front elevation of exactly one window bay of one storey of an exterior wall,
+      made as a repeating texture tile: the tile is placed side by side and stacked floor upon floor,
+      so the wall must look the same along the top edge as along the bottom edge, and the same along
+      the left edge as along the right edge. Plain wall surrounds the window on all four sides with
+      a margin of at least 15 percent of the tile. Nothing else in the image: no ground, no grass,
+      no foundation, no stone base, no plinth, no baseboard, no floor line, no roof, no eaves,
+      no cornice, no gutter, no sky, no door, no border around the image, no vignette.
+  tile:
+    band: 0.10
+    search: 0.10
+    recenter: false
+    frame: >-
+      Seen from directly above, looking straight down, made as a repeating texture tile.
+      Detail is evenly distributed over the whole image with no focal point, no border,
+      no vignette, no lighting gradient, uniform brightness.
+
+# 후처리 색 보정 기본값(너무 어둡거나 채도가 지나칠 때만 살짝 맞춘다)
+adjust_defaults:
+  min_luma: 0.42        # 평균 밝기(0..1)가 이보다 낮으면 감마로 올린다
+  max_sat: 0.55         # 평균 채도(HSV S)가 이보다 높으면 낮춘다
+  contrast: 1.0         # 1보다 작으면 평균 쪽으로 대비를 줄인다
+  flatten: 0.0          # 0..1, 큰 얼룩(저주파 밝기 변화)을 줄여 멀리서 반복 무늬가 덜 보이게 한다
+  crop: 1.0             # 1보다 작으면 가운데를 잘라 쓴다(가장자리 테두리·흐림 제거)
+
+assets:
+  # ---- 외벽: 한 칸 × 한 층 ------------------------------------------------
+  facade_residential:
+    kind: facade
+    out_size: [1024, 1024]
+    subject: >-
+      A cozy residential house wall. Wall: smooth hand-plastered warm cream wall with a very subtle
+      soft texture, evenly colored, no scattered stones. Window: one mint-green window centered in
+      the tile, with a softly arched top, and a delicate traditional Korean wooden lattice (changsal)
+      pattern faintly visible behind the glass, plus a small wooden flower box with tiny pastel
+      flowers under the sill. The window with its flower box is about 40 percent of the tile width
+      and about 55 percent of the tile height.
+
+  facade_commercial:
+    kind: facade
+    out_size: [1024, 1024]
+    subject: >-
+      A cute small shop wall. Wall: light cream-white painted wall, evenly colored. One wide shop
+      window of clear pale aqua glass with a slim white frame, centered, about 62 percent of the
+      tile width and 45 percent of the tile height, with a short scalloped fabric awning in coral
+      and cream vertical stripes directly above the glass and a tiny potted plant on the sill.
+      The awning and window together stay inside the central area, leaving plain wall at least
+      15 percent wide on every side.
+
+  facade_public:
+    kind: facade
+    out_size: [1024, 1024]
+    subject: >-
+      A friendly public building wall, like a small town hall or school. Wall: pale powder-blue
+      painted wall, evenly colored. One large rectangular window centered, with a crisp white frame
+      divided into six panes and a simple white sill, about 55 percent of the tile width and
+      52 percent of the tile height. The glass panes are calm pale sky-blue with a soft diagonal
+      reflection highlight; no curtains, no furniture, no plants or other objects behind the glass.
+
+  facade_industrial:
+    kind: facade
+    size: 1536x1024
+    out_size: [1536, 1024]
+    subject: >-
+      A tidy small factory or warehouse wall, wide 3:2 tile. Wall: corrugated metal cladding with
+      evenly spaced vertical ribs running straight from the top edge to the bottom edge without any
+      horizontal break, soft pale mint green with light gray highlights. One long horizontal strip
+      of high clerestory windows (four panes with slim white frames side by side) centered
+      horizontally and placed slightly above the middle, about 60 percent of the tile width and
+      24 percent of the tile height, with plain ribbed panel above and below it.
+
+  facade_other:
+    kind: facade
+    out_size: [1024, 1024]
+    adjust: {max_sat: 0.2}   # 주거(살구빛)와 멀리서 구분되게 연베이지 쪽으로
+    subject: >-
+      A humble simple small building wall. Wall: plain soft light beige plaster with a few very
+      faint hand-painted strokes, evenly colored. One small simple square wooden window with four
+      panes and a honey-colored wooden frame, centered, about 34 percent of the tile width and
+      40 percent of the tile height.
+
+  # ---- 지붕: 위에서 본 재질 ---------------------------------------------
+  roof_residential:
+    kind: tile
+    out_size: [1024, 1024]
+    adjust: {flatten: 0.3, max_sat: 0.46, min_luma: 0.66}   # 원본 채도 0.60 → 파스텔 쪽으로
+    subject: >-
+      Clay tile roof surface: rows of rounded curved clay roof tiles in soft coral and warm orange,
+      in neat straight horizontal rows covering the entire image, gentle color variation between
+      individual tiles. No ridge, no roof edge, no chimney, no gutter.
+
+  roof_commercial:
+    kind: tile
+    out_size: [1024, 1024]
+    adjust: {flatten: 0.4, max_sat: 0.08}   # 원본이 파스텔 모자이크로 나와 연회색으로 낮춤
+    subject: >-
+      Flat rooftop floor of a shop building: small square light warm-gray ceramic tiles in a neat
+      straight grid with thin pale grout lines, gentle color variation between tiles. No edges,
+      no railings, no equipment, no drains.
+
+  roof_public:
+    kind: tile
+    out_size: [1024, 1024]
+    adjust: {flatten: 0.4}
+    subject: >-
+      Flat rooftop of a public building: square pale cool-gray concrete paver tiles, a little larger
+      than small tiles, in a neat straight grid with soft grout lines and a faint powder-blue tint,
+      gentle color variation between pavers. No edges, no railings, no equipment, no drains.
+
+  roof_industrial:
+    kind: tile
+    out_size: [1024, 1024]
+    adjust: {flatten: 0.3}
+    subject: >-
+      Metal roof of a small factory: powder-blue corrugated metal roof sheets with evenly spaced
+      parallel ribs running vertically through the whole image from the top edge to the bottom edge,
+      soft highlights on the ribs. No edges, no skylights, no vents.
+
+  roof_other:
+    kind: tile
+    out_size: [1024, 1024]
+    adjust: {flatten: 0.3, max_sat: 0.26}   # 녹청이 다른 지붕보다 튀어 살짝 낮춤
+    subject: >-
+      Shingle roof surface: soft verdigris teal-green roof shingles with slightly rounded ends in neat
+      overlapping horizontal rows, gentle color variation between shingles. No ridge, no edges.
+
+  # ---- 지면 -------------------------------------------------------------
+  ground_grass:
+    kind: tile
+    out_size: [1024, 1024]
+    adjust: {contrast: 0.8, flatten: 0.7, max_sat: 0.42}
+    subject: >-
+      Lawn: soft fresh light green short grass drawn with gentle painterly strokes, low contrast,
+      with only a sparse sprinkle of tiny pastel flowers (white, pale pink, butter yellow) evenly
+      scattered far apart. No big clumps, no paths, no stones, no dark patches, no bare soil.
+
+  ground_paving:
+    kind: tile
+    out_size: [1024, 1024]
+    adjust: {flatten: 0.5}
+    subject: >-
+      Pedestrian sidewalk pavement: small rectangular clay bricks in a running bond pattern,
+      pastel colors (pale pink, peach, cream, light sand) gently mixed, soft light grout lines,
+      neat and even. No curb, no drains, no manholes.
+
+  road_asphalt:
+    kind: tile
+    out_size: [1024, 1024]
+    adjust: {contrast: 0.85, flatten: 0.7}
+    subject: >-
+      Road surface: smooth light gray asphalt with a fine soft speckled grain, very low contrast,
+      only subtle gentle tone variation. No lane markings, no painted lines, no cracks, no manholes,
+      no tire marks, no curb, no puddles.
+
+  rail_ballast:
+    kind: tile
+    out_size: [1024, 1024]
+    adjust: {flatten: 0.6}
+    subject: >-
+      Railway track bed: pale gray-beige crushed stone ballast gravel covering the whole image,
+      with a few faint low-contrast weathered wooden sleepers half buried in the gravel, widely
+      spaced, running horizontally. No steel rails, no plants, no edges.
+
+  # ---- 교량 상판 --------------------------------------------------------
+  bridge_road:
+    kind: tile
+    out_size: [1024, 1024]
+    adjust: {contrast: 0.85, flatten: 0.7}
+    subject: >-
+      Bridge deck road surface: light gray asphalt, slightly warmer and smoother than a street,
+      fine soft grain, very low contrast. No lane markings, no painted lines, no expansion joints,
+      no railings, no curb.
+
+  bridge_foot:
+    kind: tile
+    out_size: [1024, 1024]
+    adjust: {flatten: 0.4, max_sat: 0.46}   # 원본 채도 0.61
+    subject: >-
+      Footbridge deck: warm honey-colored wooden planks running horizontally across the full width,
+      even plank widths, soft wood grain, a few tiny round nail heads, gentle color variation between
+      planks. No gaps showing water, no railings, no edges.
+
+  bridge_rail:
+    kind: tile
+    out_size: [1024, 1024]
+    adjust: {flatten: 0.6}
+    subject: >-
+      Railway bridge deck: smooth pale warm-gray concrete slab with soft subtle mottling and a few
+      faint formwork panel seams, very low contrast. No rails, no sleepers, no railings, no edges.

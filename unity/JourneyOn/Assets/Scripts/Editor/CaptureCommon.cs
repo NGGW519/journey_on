@@ -24,6 +24,8 @@ namespace JourneyOn.Editor
         public class Area
         {
             public AreaManifest m;
+            /// <summary>씬에 적용된 아트 테마(WorldLook). 캡처 카메라 후처리·틸트시프트·자막 색에 쓴다.</summary>
+            public Theme theme = Theme.Realistic;
             public Dictionary<(int, int), Terrain> terrains = new();
 
             public Vector3 ToUnity(double e, double n, float y) => new((float)(e - m.origin.easting), y, (float)(n - m.origin.northing));
@@ -35,7 +37,8 @@ namespace JourneyOn.Editor
         public static Area OpenArea(string area)
         {
             EditorSceneManager.OpenScene($"Assets/Scenes/{area}.unity", OpenSceneMode.Single);
-            var a = new Area { m = LoadManifestWithRetry(area) };
+            var a = new Area { m = LoadManifestWithRetry(area), theme = Theme.FromScene() };
+            Debug.Log($"[Capture] 씬 테마 {a.theme.name}(후처리 {(a.theme.post ? "켬" : "끔")}, 틸트시프트 {(a.theme.tiltShift ? "조감만" : "없음")})");
             foreach (var t in UnityEngine.Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None))
             {
                 var p = t.transform.position;
@@ -73,21 +76,38 @@ namespace JourneyOn.Editor
             cam.nearClipPlane = 0.3f;
             cam.farClipPlane = WorldImporter.FarClip(a.m, 12000f);
             cam.fieldOfView = fov;
+            ThemeApply.ConfigureCaptureCamera(cam, a.theme);   // 테마 후처리(전역 Volume)
             return cam;
         }
 
-        /// <summary>URP 렌더 요청으로 rt 에 그린 뒤 tex 로 읽는다.</summary>
-        public static void Render(Camera cam, RenderTexture rt, Texture2D tex)
+        /// <summary>
+        /// URP 렌더 요청으로 rt 에 그린 뒤 tex 로 읽는다. tiltShift &gt; 0 이면(조감 시점) 테마 틸트시프트를 걸어 읽는다.
+        /// 초점은 바라보는 점(focusWorld)의 화면 높이다. 없으면 화면 가운데.
+        /// </summary>
+        public static void Render(Camera cam, RenderTexture rt, Texture2D tex, Theme theme = null, float tiltShift = 0f, Vector3? focusWorld = null)
         {
             cam.targetTexture = rt;
             var req = new RenderPipeline.StandardRequest { destination = rt };
             if (RenderPipeline.SupportsRenderRequest(cam, req)) RenderPipeline.SubmitRenderRequest(cam, req);
             else cam.Render();
+            RenderTexture blurred = null;
+            if (theme != null && tiltShift > 0f)
+            {
+                float focusY = 0.5f;
+                if (focusWorld.HasValue)
+                {
+                    var vp = cam.WorldToViewportPoint(focusWorld.Value);
+                    if (vp.z > 0f) focusY = Mathf.Clamp01(vp.y);
+                }
+                blurred = ThemeApply.TiltShift(rt, theme, tiltShift, focusY);
+            }
+            var src = blurred != null ? blurred : rt;
             var prev = RenderTexture.active;
-            RenderTexture.active = rt;
-            tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+            RenderTexture.active = src;
+            tex.ReadPixels(new Rect(0, 0, src.width, src.height), 0, 0);
             tex.Apply(false);
             RenderTexture.active = prev;
+            if (blurred != null) RenderTexture.ReleaseTemporary(blurred);
         }
 
         /// <summary>렌더 결과에 회색 대체 셰이더가 찍히지 않게 셰이더를 동기 컴파일한다. 반환값으로 되돌린다.</summary>

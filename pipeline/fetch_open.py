@@ -97,8 +97,17 @@ OSM_QUERIES = {
     "roads": '(way["highway"]({bb}););',
     "railways": '(way["railway"~"^(rail|light_rail|subway)$"]({bb}););',
     "boundaries": '(relation["boundary"="administrative"]["admin_level"~"^(6|7|8|9|10)$"]({bb}););',
+    # 간판(계약 C5, D-015): 이름 있는 시설 POI. node·way·relation 모두(nwr). amenity 에 ferry_terminal 포함.
+    "pois": (
+        '(nwr["name"]["amenity"]({bb});nwr["name"]["shop"]({bb});nwr["name"]["tourism"]({bb});'
+        'nwr["name"]["office"]({bb});nwr["name"]["leisure"]({bb});nwr["name"]["railway"="station"]({bb});'
+        'nwr["name"]["public_transport"="station"]({bb});nwr["name"]["historic"]({bb});'
+        'nwr["name"]["man_made"="pier"]({bb}););'
+    ),
 }
 AREA_LAYERS = {"buildings", "water_areas", "islands", "boundaries", "skirt_water_areas"}
+# 점·선·면이 섞인 레이어: node → Point, 닫힌 way → Polygon, 열린 way → LineString, relation → 면(안 되면 선)
+MIXED_LAYERS = {"pois"}
 # 원경 스커트(C4) 범위의 수면 폴리곤만. 기본 목록(OSM_QUERIES)에 넣지 않고 --layers skirt_water_areas 로 따로 받는다.
 # bbox = 범위 + skirt.margin_m + 500 m. 실패하면 원경은 수면 없이 만든다.
 SKIRT_QUERIES = {
@@ -133,18 +142,25 @@ def _ring_polys(lines: list[LineString]) -> list[Polygon]:
     return [p for p in polygonize(merged) if p.is_valid or p.buffer(0).is_valid]
 
 
-def osm_to_features(data: dict[str, Any], want_area: bool) -> list[dict[str, Any]]:
+def osm_to_features(data: dict[str, Any], want_area: bool, mixed: bool = False) -> list[dict[str, Any]]:
+    """Overpass `out geom` → GeoJSON 피처. mixed=True(POI): node 는 점, 닫힌 way 는 면, 열린 way 는 선,
+    relation 은 outer/inner 면(링을 못 만들면 구성 way 선 묶음)."""
     feats = []
     for el in data.get("elements", []):
         tags = el.get("tags", {})
         geom = None
-        if el["type"] == "way" and "geometry" in el:
+        if el["type"] == "node" and mixed and "lat" in el:
+            geom = Point(el["lon"], el["lat"])
+        elif el["type"] == "way" and "geometry" in el:
             coords = [(p["lon"], p["lat"]) for p in el["geometry"]]
-            if want_area:
-                if len(coords) >= 4 and coords[0] == coords[-1]:
+            closed = len(coords) >= 4 and coords[0] == coords[-1]
+            if want_area or (mixed and closed):
+                if closed:
                     geom = Polygon(coords)
             elif len(coords) >= 2:
                 geom = LineString(coords)
+        elif el["type"] == "relation" and mixed and not want_area:
+            geom = _relation_geom(el)
         elif el["type"] == "relation" and want_area:
             outer, inner = [], []
             for mem in el.get("members", []):
@@ -160,7 +176,7 @@ def osm_to_features(data: dict[str, Any], want_area: bool) -> list[dict[str, Any
                     geom = geom.difference(unary_union([p.buffer(0) for p in ins]))
         if geom is None or geom.is_empty:
             continue
-        if not geom.is_valid:
+        if not geom.is_valid and geom.geom_type in ("Polygon", "MultiPolygon"):
             geom = geom.buffer(0)
         feats.append({
             "type": "Feature",

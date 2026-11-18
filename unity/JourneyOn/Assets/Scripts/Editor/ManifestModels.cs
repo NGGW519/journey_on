@@ -202,6 +202,9 @@ namespace JourneyOn.Editor
         public float skirt_recolor_variation;                        // 밝기 변화 유지 비율
         public FacadeUvCheck facade_uv_check = new FacadeUvCheck();
         public float heightmap_pixel_error, camera_far_clip, fog_density;
+        // D-014 아트 테마: 적용 테마, 쓴 생성 이미지(Assets/Art/Cozy), 없어서 코드 생성 텍스처로 돌아간 파일
+        public string theme;
+        public string[] art_used = new string[0], art_missing = new string[0];
         public string[] warnings;
         public string scene;
         public string imported_at;

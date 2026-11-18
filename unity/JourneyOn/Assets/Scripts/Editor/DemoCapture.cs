@@ -19,7 +19,8 @@ namespace JourneyOn.Editor
     /// 배치 모드(-nographics 없이, -quit 없이):
     ///   -executeMethod JourneyOn.Editor.DemoCapture.CaptureFromCommandLine -area phase1
     ///   [-out &lt;mp4&gt;] [-framesDir &lt;dir&gt;] [-frames &lt;n&gt;] [-t0 &lt;초&gt;] [-t1 &lt;초&gt;] [-path &lt;keys.json&gt;]
-    ///   [-fps 30] [-width 1920] [-height 1080] [-noCredits] [-noVideo] [-ffmpeg &lt;ffmpeg.exe&gt;]
+    ///   [-fps 30] [-width 1920] [-height 1080] [-noCredits] [-noVideo] [-noTiltShift] [-ffmpeg &lt;ffmpeg.exe&gt;]
+    /// 씬 테마(WorldLook)대로 찍는다: cozy 는 후처리 + 조감 구간 틸트시프트(지형 위 40 m 이하 0, 120 m 이상 최대), 자막 색도 테마를 따른다.
     /// -frames n: [t0, t1] 를 n 장으로 고르게 찍은 짧은 미리보기(기본 출력 이름 *_preview.mp4).
     /// 기본 출력: 프레임 _workspace/demo_frames/frame_00000.png…, 영상 dist/demo_yyyyMMdd/JourneyOn_&lt;area&gt;_demo.mp4,
     /// 경로 기록 _workspace/demo_frames/path.csv(프레임별 눈 위치·지면 여유·들어 올린 양).
@@ -77,7 +78,7 @@ namespace JourneyOn.Editor
             public string area = "phase1", outPath, framesDir, pathFile, ffmpeg;
             public int fps = 30, width = 1920, height = 1080, frames;
             public float t0 = float.NaN, t1 = float.NaN;
-            public bool credits = true, video = true;
+            public bool credits = true, video = true, noTilt;
         }
 
         public static void CaptureFromCommandLine()
@@ -100,6 +101,7 @@ namespace JourneyOn.Editor
             o.t1 = F("-t1", float.NaN);
             o.credits = !CaptureCommon.Flag(a, "-noCredits");
             o.video = !CaptureCommon.Flag(a, "-noVideo");
+            o.noTilt = CaptureCommon.Flag(a, "-noTiltShift");
             try { Capture(o); EditorApplication.Exit(0); }
             catch (Exception e) { Debug.LogException(e); EditorApplication.Exit(1); }
         }
@@ -214,11 +216,13 @@ namespace JourneyOn.Editor
 
                     float clear = p.y - SurfaceMax(area, p);
                     minClear = Mathf.Min(minClear, clear);
+                    // 틸트시프트(테마): 조감 구간에만. 지형 위 높이로 세기를 정한다(40 m 이하 0, 120 m 이상 최대, 1.2 km 이상 줄임). 초점 = 바라보는 점
+                    float tilt = o.noTilt ? 0f : area.theme.TiltStrengthVideo(p.y - area.Ground(p));
                     csv.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:0.000},{2:0.0},{3:0.0},{4:0.0},{5:0.0},{6:0.0},{7:0.0},{8:0.0},{9:0.0},{10:0.0}",
                         i, t, p.x + m.origin.easting, p.z + m.origin.northing, p.y, p.y - area.Ground(p), clear, l,
                         target.x + m.origin.easting, target.z + m.origin.northing, target.y));
 
-                    CaptureCommon.Render(cam, rt, tex);
+                    CaptureCommon.Render(cam, rt, tex, area.theme, tilt, target);
                     byte[] png = tex.EncodeToPNG();
                     string file = Path.Combine(framesDir, $"frame_{i:00000}.png");
                     writes.Enqueue(Task.Run(() => File.WriteAllBytes(file, png)));
@@ -251,8 +255,9 @@ namespace JourneyOn.Editor
                 if (m.interim_layers != null && m.interim_layers.Length > 0) lines.Add("※ 시연용 임시 데이터 포함(공식 국토정보 데이터로 교체 예정)");
                 File.WriteAllText(Path.Combine(framesDir, "credits.txt"), string.Join("\n", lines), new UTF8Encoding(false));
                 int fs = Mathf.RoundToInt(o.height / 60f);
-                vf = $"drawtext=fontfile='C\\:/Windows/Fonts/malgun.ttf':textfile=credits.txt:expansion=none:fontsize={fs}:fontcolor=white:" +
-                     $"box=1:boxcolor=black@0.45:boxborderw={fs / 2}:line_spacing={fs / 3}:x={fs}:y=h-th-{fs}";
+                // 자막 색은 씬 테마(cozy: 크림색 상자 + 짙은 갈색 글자, realistic: 반투명 검정 + 흰 글자)
+                vf = $"drawtext=fontfile='C\\:/Windows/Fonts/malgun.ttf':textfile=credits.txt:expansion=none:fontsize={fs}:fontcolor={area.theme.creditFontColor}:" +
+                     $"box=1:boxcolor={area.theme.creditBoxColor}:boxborderw={fs / 2}:line_spacing={fs / 3}:x={fs}:y=h-th-{fs}";
             }
             string Args(string filter) =>
                 $"-y -hide_banner -loglevel error -framerate {o.fps} -i frame_%05d.png " +

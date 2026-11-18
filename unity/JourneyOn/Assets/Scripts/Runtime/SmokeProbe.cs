@@ -11,6 +11,8 @@ namespace JourneyOn
     /// - <c>-smokeStart &lt;E&gt;,&lt;N&gt;</c>(EPSG:5186): 시작할 때 그 지점의 최상단 지면(수면 제외) 위로 옮긴다.
     /// - <c>-smokeWalk &lt;E&gt;,&lt;N&gt;[;&lt;E&gt;,&lt;N&gt;…]</c>: 입력 없이 CharacterController.Move 로 경유점을 차례로 걷는다
     ///   (꺾인 보행교처럼 직선으로 갈 수 없는 길). 진행 거리, 경유점 도착, 막힘 여부(막은 충돌체), 밟은 교량을 남긴다.
+    /// - <c>-smokeShot &lt;png&gt;</c> [<c>-smokeShotAt &lt;초&gt;</c>, 기본 6]: 그 시각에 가까운 건물(25~150 m)을 조준해 화면 가운데를 조회하고
+    ///   (클릭과 같은 HudOverlay.PickAtCenter), 몇 프레임 뒤 HUD 를 포함한 화면을 PNG 로 저장한다(HUD 가독성 확인, 07b).
     /// - 정한 시간이 지나면 요약을 남기고 Application.Quit 을 부른다.
     /// WorldImporter 가 Player 오브젝트에 붙인다(OnControllerColliderHit 를 받으려면 CharacterController 와 같은 오브젝트여야 한다).
     /// </summary>
@@ -48,6 +50,11 @@ namespace JourneyOn
         readonly HashSet<string> bridgesWalked = new();
         CharacterController cc;
 
+        // 화면 저장(-smokeShot)
+        string shotPath;
+        float shotAt = 6f;
+        int shotStage, shotFrame;
+
         void Awake()
         {
             var args = Environment.GetCommandLineArgs();
@@ -64,6 +71,10 @@ namespace JourneyOn
                 if (TryPoint(st, out var p)) { startXZ = p; hasStart = true; }
                 else Log($"smokeStart 형식 오류 '{st}' (예: -smokeStart 246300,578400)");
             }
+
+            shotPath = Arg(args, "-smokeShot");
+            if (string.IsNullOrEmpty(shotPath)) shotPath = null;
+            if (float.TryParse(Arg(args, "-smokeShotAt"), NumberStyles.Float, Inv, out var sa) && sa > 0f) shotAt = sa;
 
             string w = Arg(args, "-smokeWalk");
             if (!string.IsNullOrEmpty(w))
@@ -143,6 +154,7 @@ namespace JourneyOn
             }
 
             if (walking && !reached && !blocked) StepWalk(now);
+            if (shotPath != null) StepShot(now);
 
             if (now - lastLog >= logInterval)
             {
@@ -166,6 +178,61 @@ namespace JourneyOn
                 active = false;
                 Application.Quit();
             }
+        }
+
+        /// <summary>-smokeShot: 조준(0→1) → 3프레임 뒤 조회(1→2) → 3프레임 뒤 저장(2→3).</summary>
+        void StepShot(float now)
+        {
+            if (shotStage == 0 && now - t0 >= shotAt)
+            {
+                var wc = GetComponent<WalkController>();
+                if (wc != null) wc.enabled = false;   // 마우스가 조준을 되돌리지 않게
+                AimAtBuilding();
+                shotStage = 1; shotFrame = Time.frameCount;
+            }
+            else if (shotStage == 1 && Time.frameCount >= shotFrame + 3)
+            {
+                var hud = GetComponent<HudOverlay>();
+                bool ok = hud != null && hud.PickAtCenter();
+                Log($"화면 저장 준비: 조회 {(ok ? "OK" : "없음")}");
+                shotStage = 2; shotFrame = Time.frameCount;
+            }
+            else if (shotStage == 2 && Time.frameCount >= shotFrame + 3)
+            {
+                ScreenCapture.CaptureScreenshot(shotPath);
+                Log($"화면 저장: {shotPath} screen={Screen.width}x{Screen.height}");
+                shotStage = 3;
+            }
+        }
+
+        /// <summary>카메라에서 25~150 m 안 건물 중 60 m 에 가장 가까운 것의 벽 가운데를 화면 가운데에 둔다.</summary>
+        void AimAtBuilding()
+        {
+            var cam = GetComponentInChildren<Camera>();
+            if (cam == null) { Log("화면 저장: 카메라 없음"); return; }
+            Vector3 eye = cam.transform.position, best = Vector3.zero;
+            string bestName = null;
+            float bestScore = float.MaxValue;
+            foreach (var bi in FindObjectsByType<BuildingInfo>(FindObjectsSortMode.None))
+            {
+                var r = bi.GetComponentInChildren<Renderer>();
+                if (r == null) continue;
+                var b = r.bounds;
+                var target = new Vector3(b.center.x, Mathf.Lerp(b.min.y, b.center.y, 0.6f), b.center.z);
+                float d = Vector3.Distance(eye, target);
+                if (d < 25f || d > 150f) continue;
+                // 가는 길에 다른 것이 가리면 건너뛴다
+                if (Physics.Raycast(eye, (target - eye).normalized, out var h, d + 5f, Physics.DefaultRaycastLayers & ~(1 << WalkController.WaterLayer), QueryTriggerInteraction.Ignore)
+                    && h.collider.GetComponentInParent<BuildingInfo>() != bi) continue;
+                float score = Mathf.Abs(d - 60f);
+                if (score < bestScore) { bestScore = score; best = target; bestName = bi.name; }
+            }
+            if (bestName == null) { Log("화면 저장: 25~150 m 안에 보이는 건물 없음 → 그대로 찍음"); return; }
+            var dir = best - eye;
+            transform.rotation = Quaternion.Euler(0f, Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg, 0f);
+            float pitch = -Mathf.Atan2(dir.y, new Vector2(dir.x, dir.z).magnitude) * Mathf.Rad2Deg;
+            cam.transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+            Log($"화면 저장 조준: {bestName} 거리 {dir.magnitude:0.0} m");
         }
 
         string WalkState() => walking
